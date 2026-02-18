@@ -2,6 +2,7 @@ package com.extensionbox.app.modules;
 
 import android.content.Context;
 import android.net.TrafficStats;
+import android.os.SystemClock;
 
 import com.extensionbox.app.Fmt;
 import com.extensionbox.app.Prefs;
@@ -14,8 +15,14 @@ public class NetworkModule implements Module {
 
     private Context ctx;
     private boolean running = false;
-    private long prevRx, prevTx, prevTime;
-    private long dlSpeed, ulSpeed;
+
+    // Separate tracking for Rx and Tx
+    private long prevRx, prevTx;
+    private long prevTime;
+    private long dlSpeed, ulSpeed; // bytes/sec
+
+    // Smoothing: keep previous values to average
+    private long prevDlSpeed, prevUlSpeed;
 
     @Override public String key() { return "network"; }
     @Override public String name() { return "Network Speed"; }
@@ -32,11 +39,21 @@ public class NetworkModule implements Module {
     @Override
     public void start(Context c, SystemAccess sys) {
         ctx = c;
-        prevRx = TrafficStats.getTotalRxBytes();
-        prevTx = TrafficStats.getTotalTxBytes();
-        prevTime = System.currentTimeMillis();
+        // Use elapsedRealtime for more accurate timing (not affected by wall clock changes)
+        prevTime = SystemClock.elapsedRealtime();
+
+        // Read initial values
+        long rx = TrafficStats.getTotalRxBytes();
+        long tx = TrafficStats.getTotalTxBytes();
+
+        // TrafficStats returns UNSUPPORTED (-1) on some devices
+        prevRx = (rx != TrafficStats.UNSUPPORTED) ? rx : 0;
+        prevTx = (tx != TrafficStats.UNSUPPORTED) ? tx : 0;
+
         dlSpeed = 0;
         ulSpeed = 0;
+        prevDlSpeed = 0;
+        prevUlSpeed = 0;
         running = true;
     }
 
@@ -58,12 +75,28 @@ public class NetworkModule implements Module {
             return;
         }
 
-        long now = System.currentTimeMillis();
-        long dt = now - prevTime;
+        long now = SystemClock.elapsedRealtime();
+        long dtMs = now - prevTime;
 
-        if (dt > 0) {
-            dlSpeed = Math.max(0, (rx - prevRx) * 1000 / dt);
-            ulSpeed = Math.max(0, (tx - prevTx) * 1000 / dt);
+        if (dtMs > 0) {
+            long rxDelta = rx - prevRx;
+            long txDelta = tx - prevTx;
+
+            // Guard against counter reset or negative values
+            if (rxDelta < 0) rxDelta = 0;
+            if (txDelta < 0) txDelta = 0;
+
+            // Calculate bytes per second
+            long rawDl = rxDelta * 1000 / dtMs;
+            long rawUl = txDelta * 1000 / dtMs;
+
+            // Exponential moving average for smoother display
+            // weight: 60% new, 40% old
+            dlSpeed = (rawDl * 6 + prevDlSpeed * 4) / 10;
+            ulSpeed = (rawUl * 6 + prevUlSpeed * 4) / 10;
+
+            prevDlSpeed = dlSpeed;
+            prevUlSpeed = ulSpeed;
         }
 
         prevRx = rx;

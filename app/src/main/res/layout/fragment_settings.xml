@@ -66,7 +66,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="ABOUT"
+            android:text="TRANSLATION"
             android:textSize="12sp"
             android:textStyle="bold"
             android:letterSpacing="0.15"
@@ -76,10 +76,19 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Extension Box v1.0\nOpen Source\n\nDisabled extension = zero resource usage"
+            android:text="Help translate Extension Box into your language! Export the template, translate all strings, and submit a Pull Request on GitHub. Your name and profile will be added to the Contributors section."
             android:textSize="13sp"
             android:textColor="?attr/colorOnSurfaceVariant"
-            android:lineSpacingExtra="4dp"
+            android:lineSpacingExtra="3dp"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnExportStrings"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="🌐 Export strings.xml for Translation"
+            android:textAllCaps="false"
+            style="@style/Widget.Material3.Button.TonalButton"
             android:layout_marginBottom="32dp" />
 
     </LinearLayout>

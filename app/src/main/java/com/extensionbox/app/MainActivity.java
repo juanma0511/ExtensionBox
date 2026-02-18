@@ -10,6 +10,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.extensionbox.app.ui.AboutFragment;
 import com.extensionbox.app.ui.DashboardFragment;
 import com.extensionbox.app.ui.ExtensionsFragment;
 import com.extensionbox.app.ui.SettingsFragment;
@@ -20,7 +21,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Fragment dashFrag, extFrag, setFrag, activeFrag;
+    private Fragment dashFrag, extFrag, setFrag, aboutFrag, activeFrag;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,13 +33,16 @@ public class MainActivity extends AppCompatActivity {
         dashFrag = new DashboardFragment();
         extFrag = new ExtensionsFragment();
         setFrag = new SettingsFragment();
+        aboutFrag = new AboutFragment();
 
         getSupportFragmentManager().beginTransaction()
                 .add(R.id.fragmentContainer, dashFrag, "dash")
                 .add(R.id.fragmentContainer, extFrag, "ext")
                 .add(R.id.fragmentContainer, setFrag, "set")
+                .add(R.id.fragmentContainer, aboutFrag, "about")
                 .hide(extFrag)
                 .hide(setFrag)
+                .hide(aboutFrag)
                 .commit();
         activeFrag = dashFrag;
 
@@ -49,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
             if (id == R.id.nav_dashboard) target = dashFrag;
             else if (id == R.id.nav_extensions) target = extFrag;
             else if (id == R.id.nav_settings) target = setFrag;
+            else if (id == R.id.nav_about) target = aboutFrag;
             else return false;
 
             getSupportFragmentManager().beginTransaction()

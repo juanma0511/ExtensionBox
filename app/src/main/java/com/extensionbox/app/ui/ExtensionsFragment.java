@@ -2,10 +2,12 @@ package com.extensionbox.app.ui;
 
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.AdapterView;
@@ -16,6 +18,7 @@ import androidx.fragment.app.Fragment;
 import com.extensionbox.app.Prefs;
 import com.extensionbox.app.R;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 
 public class ExtensionsFragment extends Fragment {
@@ -114,94 +117,103 @@ public class ExtensionsFragment extends Fragment {
     private void buildSettingsPanel(LinearLayout panel, String key) {
         switch (key) {
             case "battery":
-                addSpinner(panel, "bat_interval", "Refresh",
+                addSpinnerWithCustom(panel, "bat_interval", "Refresh",
                         new String[]{"5s","10s","30s","60s"}, new int[]{5000,10000,30000,60000}, 10000);
                 addSwitch(panel, "bat_low_alert", "Low Battery Alert", true);
-                addSpinner(panel, "bat_low_thresh", "Alert Threshold",
+                addSpinnerWithCustom(panel, "bat_low_thresh", "Alert Threshold",
                         new String[]{"5%","10%","15%","20%","25%","30%"}, new int[]{5,10,15,20,25,30}, 15);
                 addSwitch(panel, "bat_temp_alert", "High Temp Alert", true);
-                addSpinner(panel, "bat_temp_thresh", "Temp Threshold",
+                addSpinnerWithCustom(panel, "bat_temp_thresh", "Temp Threshold",
                         new String[]{"38°C","40°C","42°C","45°C"}, new int[]{38,40,42,45}, 42);
                 break;
             case "cpu_ram":
-                addSpinner(panel, "cpu_interval", "Refresh",
+                addSpinnerWithCustom(panel, "cpu_interval", "Refresh",
                         new String[]{"3s","5s","10s","30s"}, new int[]{3000,5000,10000,30000}, 5000);
                 addSwitch(panel, "cpu_ram_alert", "High RAM Alert", false);
-                addSpinner(panel, "cpu_ram_thresh", "RAM Threshold",
+                addSpinnerWithCustom(panel, "cpu_ram_thresh", "RAM Threshold",
                         new String[]{"80%","85%","90%","95%"}, new int[]{80,85,90,95}, 90);
                 break;
             case "screen":
-                addSpinner(panel, "scr_interval", "Refresh",
+                addSpinnerWithCustom(panel, "scr_interval", "Refresh",
                         new String[]{"5s","10s","30s"}, new int[]{5000,10000,30000}, 10000);
-                addSpinner(panel, "scr_time_limit", "Screen Time Limit",
+                addSpinnerWithCustom(panel, "scr_time_limit", "Screen Time Limit",
                         new String[]{"Off","1h","2h","3h","4h","6h","8h"}, new int[]{0,60,120,180,240,360,480}, 0);
                 addSwitch(panel, "scr_show_drain", "Show Drain Info", true);
                 addSwitch(panel, "scr_show_yesterday", "Show Yesterday", true);
                 break;
             case "sleep":
-                addSpinner(panel, "slp_interval", "Refresh",
+                addSpinnerWithCustom(panel, "slp_interval", "Refresh",
                         new String[]{"10s","30s","60s"}, new int[]{10000,30000,60000}, 30000);
                 break;
             case "network":
-                addSpinner(panel, "net_interval", "Refresh",
+                addSpinnerWithCustom(panel, "net_interval", "Refresh",
                         new String[]{"1s","3s","5s","10s"}, new int[]{1000,3000,5000,10000}, 3000);
                 break;
             case "data":
-                addSpinner(panel, "dat_interval", "Refresh",
+                addSpinnerWithCustom(panel, "dat_interval", "Refresh",
                         new String[]{"30s","60s","5min"}, new int[]{30000,60000,300000}, 60000);
                 addSwitch(panel, "dat_show_breakdown", "WiFi/Mobile Split", true);
-                addSpinner(panel, "dat_plan_limit", "Monthly Plan",
+                addSpinnerWithCustom(panel, "dat_plan_limit", "Monthly Plan",
                         new String[]{"Off","1GB","2GB","5GB","10GB","20GB","50GB"}, new int[]{0,1024,2048,5120,10240,20480,51200}, 0);
-                addSpinner(panel, "dat_plan_alert_pct", "Plan Alert At",
+                addSpinnerWithCustom(panel, "dat_plan_alert_pct", "Plan Alert At",
                         new String[]{"80%","90%","95%"}, new int[]{80,90,95}, 90);
-                addSpinner(panel, "dat_billing_day", "Billing Day",
+                addSpinnerWithCustom(panel, "dat_billing_day", "Billing Day",
                         new String[]{"1","5","10","15","20","25"}, new int[]{1,5,10,15,20,25}, 1);
                 break;
             case "unlock":
-                addSpinner(panel, "ulk_interval", "Refresh",
+                addSpinnerWithCustom(panel, "ulk_interval", "Refresh",
                         new String[]{"5s","10s","30s"}, new int[]{5000,10000,30000}, 10000);
-                addSpinner(panel, "ulk_daily_limit", "Daily Limit",
+                addSpinnerWithCustom(panel, "ulk_daily_limit", "Daily Limit",
                         new String[]{"Off","20","30","50","75","100"}, new int[]{0,20,30,50,75,100}, 0);
                 addSwitch(panel, "ulk_limit_alert", "Alert on Limit", true);
-                addSpinner(panel, "ulk_debounce", "Debounce",
+                addSpinnerWithCustom(panel, "ulk_debounce", "Debounce",
                         new String[]{"3s","5s","10s"}, new int[]{3000,5000,10000}, 5000);
                 break;
             case "storage":
-                addSpinner(panel, "sto_interval", "Refresh",
+                addSpinnerWithCustom(panel, "sto_interval", "Refresh",
                         new String[]{"1min","5min","15min"}, new int[]{60000,300000,900000}, 300000);
                 addSwitch(panel, "sto_low_alert", "Low Storage Alert", true);
-                addSpinner(panel, "sto_low_thresh_mb", "Low Threshold",
+                addSpinnerWithCustom(panel, "sto_low_thresh_mb", "Low Threshold",
                         new String[]{"500MB","1GB","2GB","5GB"}, new int[]{500,1000,2000,5000}, 1000);
                 break;
             case "connection":
-                addSpinner(panel, "con_interval", "Refresh",
+                addSpinnerWithCustom(panel, "con_interval", "Refresh",
                         new String[]{"5s","10s","30s"}, new int[]{5000,10000,30000}, 10000);
                 break;
             case "uptime":
-                addSpinner(panel, "upt_interval", "Refresh",
+                addSpinnerWithCustom(panel, "upt_interval", "Refresh",
                         new String[]{"30s","1min","5min"}, new int[]{30000,60000,300000}, 60000);
                 break;
             case "steps":
-                addSpinner(panel, "stp_interval", "Refresh",
+                addSpinnerWithCustom(panel, "stp_interval", "Refresh",
                         new String[]{"5s","10s","30s"}, new int[]{5000,10000,30000}, 10000);
-                addSpinner(panel, "stp_goal", "Daily Goal",
+                addSpinnerWithCustom(panel, "stp_goal", "Daily Goal",
                         new String[]{"Off","5000","8000","10000","15000"}, new int[]{0,5000,8000,10000,15000}, 10000);
-                addSpinner(panel, "stp_stride_cm", "Step Length",
+                addSpinnerWithCustom(panel, "stp_stride_cm", "Step Length",
                         new String[]{"60cm","65cm","70cm","75cm","80cm","85cm"}, new int[]{60,65,70,75,80,85}, 75);
                 addSwitch(panel, "stp_show_distance", "Show Distance", true);
                 addSwitch(panel, "stp_show_yesterday", "Show Yesterday", true);
                 addSwitch(panel, "stp_show_goal", "Show Goal", true);
                 break;
             case "speedtest":
-                addSpinner(panel, "spd_interval", "Display Refresh",
+                addSpinnerWithCustom(panel, "spd_interval", "Display Refresh",
                         new String[]{"10s","30s","60s"}, new int[]{10000,30000,60000}, 30000);
                 addSwitch(panel, "spd_auto_test", "Auto Test", true);
-                addSpinner(panel, "spd_test_freq", "Test Frequency",
+                addSpinnerWithCustom(panel, "spd_test_freq", "Test Frequency",
                         new String[]{"15min","30min","1h","2h"}, new int[]{15,30,60,120}, 60);
                 addSwitch(panel, "spd_wifi_only", "WiFi Only", true);
                 addSwitch(panel, "spd_show_ping", "Show Ping", true);
-                addSpinner(panel, "spd_daily_limit", "Daily Test Limit",
+                addSpinnerWithCustom(panel, "spd_daily_limit", "Daily Test Limit",
                         new String[]{"5","10","20","∞"}, new int[]{5,10,20,9999}, 10);
+                break;
+            case "fap":
+                addSpinnerWithCustom(panel, "fap_interval", "Refresh",
+                        new String[]{"30s","1min","5min"}, new int[]{30000,60000,300000}, 60000);
+                addSpinnerWithCustom(panel, "fap_daily_limit", "Daily Limit Warning",
+                        new String[]{"Off","1","2","3","5"}, new int[]{0,1,2,3,5}, 0);
+                addSwitch(panel, "fap_show_streak", "Show Streak", true);
+                addSwitch(panel, "fap_show_yesterday", "Show Yesterday", true);
+                addSwitch(panel, "fap_show_alltime", "Show All-Time Total", true);
                 break;
         }
     }
@@ -226,8 +238,12 @@ public class ExtensionsFragment extends Fragment {
         parent.addView(row);
     }
 
-    private void addSpinner(LinearLayout parent, String prefKey, String label,
-                            String[] options, int[] values, int def) {
+    /**
+     * Spinner with a "Custom" option at the end.
+     * Selecting "Custom" shows an EditText dialog for custom numeric input.
+     */
+    private void addSpinnerWithCustom(LinearLayout parent, String prefKey, String label,
+                                      String[] options, int[] values, int def) {
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
@@ -238,19 +254,45 @@ public class ExtensionsFragment extends Fragment {
         tv.setTextSize(14);
         tv.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
+        // Add "Custom" option
+        String[] extOptions = new String[options.length + 1];
+        int[] extValues = new int[values.length + 1];
+        System.arraycopy(options, 0, extOptions, 0, options.length);
+        System.arraycopy(values, 0, extValues, 0, values.length);
+        extOptions[options.length] = "Custom…";
+        extValues[values.length] = -1; // sentinel for custom
+
         Spinner sp = new Spinner(requireContext());
         sp.setAdapter(new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_dropdown_item, options));
+                android.R.layout.simple_spinner_dropdown_item, extOptions));
 
+        // Find current selection
         int current = Prefs.getInt(requireContext(), prefKey, def);
+        boolean found = false;
         for (int i = 0; i < values.length; i++) {
-            if (values[i] == current) { sp.setSelection(i); break; }
+            if (values[i] == current) {
+                sp.setSelection(i);
+                found = true;
+                break;
+            }
+        }
+        // If current value is custom (not in options), show it selected on "Custom"
+        if (!found) {
+            sp.setSelection(extOptions.length - 1);
         }
 
+        final boolean[] suppressFirst = {true}; // suppress initial onItemSelected
         sp.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                Prefs.setInt(requireContext(), prefKey, values[pos]);
+                if (suppressFirst[0]) { suppressFirst[0] = false; return; }
+
+                if (extValues[pos] == -1) {
+                    // Show custom input dialog
+                    showCustomInputDialog(prefKey, label, sp, extValues);
+                } else {
+                    Prefs.setInt(requireContext(), prefKey, extValues[pos]);
+                }
             }
             @Override public void onNothingSelected(AdapterView<?> p) {}
         });
@@ -258,6 +300,39 @@ public class ExtensionsFragment extends Fragment {
         row.addView(tv);
         row.addView(sp);
         parent.addView(row);
+    }
+
+    private void showCustomInputDialog(String prefKey, String label, Spinner sp, int[] values) {
+        EditText input = new EditText(requireContext());
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setHint("Enter value");
+        int currentVal = Prefs.getInt(requireContext(), prefKey, 0);
+        if (currentVal > 0) input.setText(String.valueOf(currentVal));
+
+        int padding = dp(24);
+        LinearLayout wrapper = new LinearLayout(requireContext());
+        wrapper.setPadding(padding, dp(8), padding, 0);
+        wrapper.addView(input);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Custom: " + label)
+                .setView(wrapper)
+                .setPositiveButton("OK", (d, w) -> {
+                    try {
+                        int val = Integer.parseInt(input.getText().toString().trim());
+                        if (val > 0) {
+                            Prefs.setInt(requireContext(), prefKey, val);
+                        }
+                    } catch (NumberFormatException ignored) {}
+                })
+                .setNegativeButton("Cancel", (d, w) -> {
+                    // Revert spinner to the current saved value
+                    int saved = Prefs.getInt(requireContext(), prefKey, values[0]);
+                    for (int i = 0; i < values.length; i++) {
+                        if (values[i] == saved) { sp.setSelection(i); break; }
+                    }
+                })
+                .show();
     }
 
     private int dp(int v) {

@@ -60,6 +60,7 @@ public class MonitorService extends Service {
         modules.add(new UptimeModule());
         modules.add(new StepModule());
         modules.add(new SpeedTestModule());
+        modules.add(new FapCounterModule());
         lastTickTime = new HashMap<>();
 
         startForeground(NOTIF_ID, buildNotification());

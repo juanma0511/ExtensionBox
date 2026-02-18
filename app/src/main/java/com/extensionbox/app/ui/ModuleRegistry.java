@@ -14,7 +14,8 @@ public final class ModuleRegistry {
         {"connection", "📡", "Connection Info",   "WiFi, cellular, VPN status",              "false"},
         {"uptime",     "⏱",  "Uptime",           "Device uptime since boot",                "false"},
         {"steps",      "👣", "Step Counter",      "Steps and distance",                      "false"},
-        {"speedtest",  "🏎", "Speed Test",       "Periodic download speed test",            "false"},
+        {"speedtest",  "🏎", "Speed Test",       "Periodic download/upload speed test",     "false"},
+        {"fap",        "🍆", "Fap Counter",      "Self-monitoring counter & streak",        "false"},
     };
 
     public static String keyAt(int i)     { return MODULES[i][0]; }
