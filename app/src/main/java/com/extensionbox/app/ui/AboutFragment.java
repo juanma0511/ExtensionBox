@@ -80,11 +80,11 @@ public class AboutFragment extends Fragment {
             public void onResponse(Call<List<Release>> call, Response<List<Release>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     Release latestRelease = response.body().get(0);
-                    String latestVersion = latestRelease.getTagName();
-                    String currentVersion = "v" + BuildConfig.VERSION_NAME;
+                    String latestVersionName = latestRelease.getTagName();
+                    String currentVersionName = BuildConfig.VERSION_NAME;
 
-                    if (!latestVersion.equals(currentVersion)) {
-                        showUpdateDialog(latestVersion);
+                    if (isNewerVersion(latestVersionName, currentVersionName)) {
+                        showUpdateDialog(latestVersionName);
                     }
                 }
             }
@@ -95,6 +95,24 @@ public class AboutFragment extends Fragment {
             }
         });
     }
+
+    private boolean isNewerVersion(String latestVersion, String currentVersion) {
+        String[] latestParts = latestVersion.replace("v", "").split("\\.");
+        String[] currentParts = currentVersion.replace("v", "").split("\\.");
+        int length = Math.max(latestParts.length, currentParts.length);
+        for (int i = 0; i < length; i++) {
+            int latestPart = i < latestParts.length ? Integer.parseInt(latestParts[i]) : 0;
+            int currentPart = i < currentParts.length ? Integer.parseInt(currentParts[i]) : 0;
+            if (latestPart > currentPart) {
+                return true;
+            }
+            if (latestPart < currentPart) {
+                return false;
+            }
+        }
+        return false;
+    }
+
 
     private void showUpdateDialog(String latestVersion) {
         new AlertDialog.Builder(getContext())
