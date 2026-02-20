@@ -42,6 +42,7 @@
             app:labelVisibilityMode="labeled"
             app:itemIconTint="?attr/colorOnSurface"
             app:itemTextColor="?attr/colorOnSurface"
+            app:itemTextAppearance="@style/NavBarLabelStyle"
             app:menu="@menu/bottom_nav" />
 
     </com.google.android.material.card.MaterialCardView>
