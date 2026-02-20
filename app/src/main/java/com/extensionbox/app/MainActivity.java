@@ -9,10 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import android.graphics.RenderEffect;
-import android.graphics.Shader;
 import android.view.View;
-import com.google.android.material.card.MaterialCardView;
 
 import com.extensionbox.app.ui.AboutFragment;
 import com.extensionbox.app.ui.DashboardFragment;
@@ -69,15 +66,10 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // Apply a subtle blur effect to the floating nav background only (so icons/text stay sharp)
+        // No blur: keep background static so icons and labels remain fully legible
         View navBg = findViewById(R.id.floatingNavBg);
-        if (navBg != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            try {
-                // stronger blur to make background legible while keeping icons/text sharp above
-                navBg.setRenderEffect(RenderEffect.createBlurEffect(22f, 22f, Shader.TileMode.CLAMP));
-            } catch (Throwable t) {
-                // ignore if unavailable on device
-            }
+        if (navBg != null) {
+            navBg.setElevation(8f);
         }
     }
 
