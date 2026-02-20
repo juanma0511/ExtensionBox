@@ -21,8 +21,8 @@
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/floatingNavBg"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="20dp"
+            android:layout_height="64dp"
+            app:cardCornerRadius="28dp"
             app:cardElevation="8dp"
             android:clickable="false"
             android:focusable="false"
@@ -32,13 +32,15 @@
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNav"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="64dp"
             android:layout_gravity="center"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
             android:backgroundTint="@android:color/transparent"
-            app:itemIconSize="24dp"
+            app:itemIconSize="28dp"
             app:labelVisibilityMode="labeled"
+            app:itemIconTint="?attr/colorOnSurface"
+            app:itemTextColor="?attr/colorOnSurface"
             app:menu="@menu/bottom_nav" />
 
     </FrameLayout>

@@ -73,7 +73,8 @@ public class MainActivity extends AppCompatActivity {
         View navBg = findViewById(R.id.floatingNavBg);
         if (navBg != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
-                navBg.setRenderEffect(RenderEffect.createBlurEffect(18f, 18f, Shader.TileMode.CLAMP));
+                // stronger blur to make background legible while keeping icons/text sharp above
+                navBg.setRenderEffect(RenderEffect.createBlurEffect(22f, 22f, Shader.TileMode.CLAMP));
             } catch (Throwable t) {
                 // ignore if unavailable on device
             }
