@@ -39,6 +39,7 @@
             android:backgroundTint="@android:color/transparent"
             android:elevation="0dp"
             app:itemIconSize="26dp"
+            app:itemPaddingTop="6dp"
             app:labelVisibilityMode="labeled"
             app:itemIconTint="?attr/colorOnSurface"
             app:itemTextColor="?attr/colorOnSurface"
