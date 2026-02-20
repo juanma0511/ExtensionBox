@@ -69,11 +69,11 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // Apply a subtle blur effect to the floating nav card on supported API levels
-        View navCard = findViewById(R.id.floatingNavCard);
-        if (navCard != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        // Apply a subtle blur effect to the floating nav background only (so icons/text stay sharp)
+        View navBg = findViewById(R.id.floatingNavBg);
+        if (navBg != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
-                navCard.setRenderEffect(RenderEffect.createBlurEffect(18f, 18f, Shader.TileMode.CLAMP));
+                navBg.setRenderEffect(RenderEffect.createBlurEffect(18f, 18f, Shader.TileMode.CLAMP));
             } catch (Throwable t) {
                 // ignore if unavailable on device
             }

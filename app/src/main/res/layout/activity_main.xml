@@ -10,26 +10,30 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/floatingNavCard"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="24dp"
-        android:layout_gravity="bottom|center_horizontal"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="8dp"
-        android:foregroundTintMode="src_over"
-        android:clickable="false"
-        android:focusable="false"
-        app:cardUseCompatPadding="true"
-        android:background="@drawable/frosted_nav_bg">
+        android:layout_gravity="bottom|center_horizontal">
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/floatingNavBg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            android:clickable="false"
+            android:focusable="false"
+            app:cardUseCompatPadding="true"
+            android:background="@drawable/frosted_nav_bg" />
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNav"
             android:layout_width="match_parent"
             android:layout_height="56dp"
+            android:layout_gravity="center"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:backgroundTint="@android:color/transparent"
@@ -37,6 +41,6 @@
             app:labelVisibilityMode="labeled"
             app:menu="@menu/bottom_nav" />
 
-    </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
 
 </FrameLayout>
