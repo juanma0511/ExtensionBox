@@ -9,6 +9,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import android.graphics.RenderEffect;
+import android.graphics.Shader;
+import android.view.View;
+import com.google.android.material.card.MaterialCardView;
 
 import com.extensionbox.app.ui.AboutFragment;
 import com.extensionbox.app.ui.DashboardFragment;
@@ -64,6 +68,16 @@ public class MainActivity extends AppCompatActivity {
             activeFrag = target;
             return true;
         });
+
+        // Apply a subtle blur effect to the floating nav card on supported API levels
+        View navCard = findViewById(R.id.floatingNavCard);
+        if (navCard != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                navCard.setRenderEffect(RenderEffect.createBlurEffect(18f, 18f, Shader.TileMode.CLAMP));
+            } catch (Throwable t) {
+                // ignore if unavailable on device
+            }
+        }
     }
 
     private void requestPerms() {
