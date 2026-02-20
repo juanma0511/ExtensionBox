@@ -35,7 +35,7 @@
             android:layout_height="wrap_content"
             android:minHeight="64dp"
             android:paddingTop="6dp"
-            android:paddingBottom="10dp"
+            android:paddingBottom="18dp"
             android:backgroundTint="@android:color/transparent"
             android:elevation="0dp"
             app:itemIconSize="26dp"
