@@ -23,7 +23,7 @@
         android:foregroundTintMode="src_over"
         android:clickable="false"
         android:focusable="false"
-        android:useCompatPadding="true"
+        app:cardUseCompatPadding="true"
         android:background="@drawable/frosted_nav_bg">
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
