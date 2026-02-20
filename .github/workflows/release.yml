@@ -1,16 +1,16 @@
-name: Release APK
+name: Build Debug APK
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build_release:
+  build_debug:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,20 +26,19 @@ jobs:
           chmod +x gradlew
           bash ./gradlew --version
 
-      - name: Build release APK (unsigned)
-        run: bash ./gradlew :app:assembleRelease --stacktrace
+      - name: Build debug APK
+        run: bash ./gradlew :app:assembleDebug --stacktrace
 
       - name: Locate APK
         run: |
-          ls -R app/build/outputs/apk || true
-          APK="$(find app/build/outputs/apk -type f -name '*.apk' | head -n 1)"
+          APK="$(find app/build/outputs/apk -type f -name '*debug*.apk' | head -n 1)"
           echo "APK=$APK" >> $GITHUB_ENV
           test -n "$APK"
 
       - name: Rename APK
-        run: cp "$APK" "ExtensionBox-${{ github.ref_name }}.apk"
+        run: cp "$APK" "ExtensionBox-${{ github.ref_name }}-debug.apk"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ExtensionBox-${{ github.ref_name }}.apk
+          files: ExtensionBox-${{ github.ref_name }}-debug.apk
