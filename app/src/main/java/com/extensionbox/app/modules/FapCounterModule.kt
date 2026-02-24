@@ -91,19 +91,28 @@ class FapCounterModule : Module {
     override fun compact(): String {
         val today = ctx?.let { Prefs.getInt(it, "fap_today", 0) } ?: 0
         val streak = ctx?.let { Prefs.getInt(it, "fap_streak", 0) } ?: 0
-        return if (streak > 0) "🍆$today 🔥${streak}d" else "🍆$today today"
+        val showStreak = ctx?.let { Prefs.getBool(it, "fap_show_streak", true) } ?: true
+        return if (streak > 0 && showStreak) "🍆$today 🔥${streak}d" else "🍆$today today"
     }
 
     override fun detail(): String {
         val c = ctx ?: return "🍆 No data"
         val today = Prefs.getInt(c, "fap_today", 0)
         val streak = Prefs.getInt(c, "fap_streak", 0)
+        val yesterday = Prefs.getInt(c, "fap_yesterday", 0)
         val monthly = Prefs.getInt(c, "fap_monthly", 0)
+        val allTime = Prefs.getInt(c, "fap_all_time", 0)
+
+        val showStreak = Prefs.getBool(c, "fap_show_streak", true)
+        val showYesterday = Prefs.getBool(c, "fap_show_yesterday", true)
+        val showAllTime = Prefs.getBool(c, "fap_show_all_time", true)
 
         val sb = StringBuilder()
         sb.append("🍆 Today: $today")
-        if (streak > 0) sb.append(" • 🔥 Streak: ${streak}d clean")
+        if (streak > 0 && showStreak) sb.append(" • 🔥 Streak: ${streak}d clean")
+        if (showYesterday && yesterday >= 0) sb.append("\n   Yesterday: $yesterday")
         sb.append("\n   Monthly: $monthly")
+        if (showAllTime) sb.append(" • Total: $allTime")
         return sb.toString()
     }
 

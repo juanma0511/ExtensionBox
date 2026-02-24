@@ -211,6 +211,28 @@ fun ModuleSettings(key: String, context: android.content.Context) {
                         formatter = { "${it.toInt()}%" }
                     )
                 }
+                var tempAlert by remember { mutableStateOf(Prefs.getBool(context, "bat_temp_alert", true)) }
+                SettingSwitch(
+                    label = "High Temp Alert",
+                    checked = tempAlert,
+                    onCheckedChange = {
+                        tempAlert = it
+                        Prefs.setBool(context, "bat_temp_alert", it)
+                    }
+                )
+                if (tempAlert) {
+                    var tempThresh by remember { mutableStateOf(Prefs.getInt(context, "bat_temp_thresh", 42).toFloat()) }
+                    SettingSlider(
+                        label = "Temp Threshold",
+                        value = tempThresh,
+                        valueRange = 30f..60f,
+                        onValueChange = {
+                            tempThresh = it
+                            Prefs.setInt(context, "bat_temp_thresh", it.toInt())
+                        },
+                        formatter = { "${it.toInt()}°C" }
+                    )
+                }
             }
             "cpu_ram" -> {
                 var ramAlert by remember { mutableStateOf(Prefs.getBool(context, "cpu_ram_alert", false)) }
@@ -246,6 +268,15 @@ fun ModuleSettings(key: String, context: android.content.Context) {
                         Prefs.setBool(context, "scr_show_drain", it)
                     }
                 )
+                var showYesterday by remember { mutableStateOf(Prefs.getBool(context, "scr_show_yesterday", true)) }
+                SettingSwitch(
+                    label = "Show Yesterday",
+                    checked = showYesterday,
+                    onCheckedChange = {
+                        showYesterday = it
+                        Prefs.setBool(context, "scr_show_yesterday", it)
+                    }
+                )
                 var timeLimit by remember { mutableStateOf(Prefs.getInt(context, "scr_time_limit", 0).toFloat()) }
                 SettingSlider(
                     label = "Daily Screen Time Limit",
@@ -259,7 +290,67 @@ fun ModuleSettings(key: String, context: android.content.Context) {
                     formatter = { if (it == 0f) "Disabled" else "${it.toInt()}m" }
                 )
             }
+            "steps" -> {
+                var goal by remember { mutableStateOf(Prefs.getInt(context, "stp_goal", 10000).toFloat()) }
+                SettingSlider(
+                    label = "Daily Goal",
+                    value = goal,
+                    valueRange = 0f..30000f,
+                    onValueChange = {
+                        goal = it
+                        Prefs.setInt(context, "stp_goal", it.toInt())
+                    },
+                    formatter = { if (it == 0f) "No Goal" else "${it.toInt()} steps" }
+                )
+                var stride by remember { mutableStateOf(Prefs.getInt(context, "stp_stride_cm", 75).toFloat()) }
+                SettingSlider(
+                    label = "Step Length",
+                    value = stride,
+                    valueRange = 30f..120f,
+                    onValueChange = {
+                        stride = it
+                        Prefs.setInt(context, "stp_stride_cm", it.toInt())
+                    },
+                    formatter = { "${it.toInt()} cm" }
+                )
+                var showDistance by remember { mutableStateOf(Prefs.getBool(context, "stp_show_distance", true)) }
+                SettingSwitch(
+                    label = "Show Distance",
+                    checked = showDistance,
+                    onCheckedChange = {
+                        showDistance = it
+                        Prefs.setBool(context, "stp_show_distance", it)
+                    }
+                )
+                var showGoal by remember { mutableStateOf(Prefs.getBool(context, "stp_show_goal", true)) }
+                SettingSwitch(
+                    label = "Show Goal",
+                    checked = showGoal,
+                    onCheckedChange = {
+                        showGoal = it
+                        Prefs.setBool(context, "stp_show_goal", it)
+                    }
+                )
+                var showYesterday by remember { mutableStateOf(Prefs.getBool(context, "stp_show_yesterday", true)) }
+                SettingSwitch(
+                    label = "Show Yesterday",
+                    checked = showYesterday,
+                    onCheckedChange = {
+                        showYesterday = it
+                        Prefs.setBool(context, "stp_show_yesterday", it)
+                    }
+                )
+            }
             "data" -> {
+                var split by remember { mutableStateOf(Prefs.getBool(context, "dat_show_breakdown", true)) }
+                SettingSwitch(
+                    label = "WiFi/Mobile Split",
+                    checked = split,
+                    onCheckedChange = {
+                        split = it
+                        Prefs.setBool(context, "dat_show_breakdown", it)
+                    }
+                )
                 var planLimit by remember { mutableStateOf(Prefs.getInt(context, "dat_plan_limit", 0).toFloat()) }
                 SettingSlider(
                     label = "Monthly Plan Limit",
@@ -270,6 +361,30 @@ fun ModuleSettings(key: String, context: android.content.Context) {
                         Prefs.setInt(context, "dat_plan_limit", it.toInt())
                     },
                     formatter = { if (it == 0f) "No Limit" else "${it.toInt()} MB" }
+                )
+                if (planLimit > 0) {
+                    var alertPct by remember { mutableStateOf(Prefs.getInt(context, "dat_plan_alert_pct", 90).toFloat()) }
+                    SettingSlider(
+                        label = "Plan Alert Percentage",
+                        value = alertPct,
+                        valueRange = 50f..100f,
+                        onValueChange = {
+                            alertPct = it
+                            Prefs.setInt(context, "dat_plan_alert_pct", it.toInt())
+                        },
+                        formatter = { "${it.toInt()}%" }
+                    )
+                }
+                var billingDay by remember { mutableStateOf(Prefs.getInt(context, "dat_billing_day", 1).toFloat()) }
+                SettingSlider(
+                    label = "Billing Day",
+                    value = billingDay,
+                    valueRange = 1f..31f,
+                    onValueChange = {
+                        billingDay = it
+                        Prefs.setInt(context, "dat_billing_day", it.toInt())
+                    },
+                    formatter = { "${it.toInt()}" }
                 )
             }
             "unlock" -> {
@@ -283,6 +398,28 @@ fun ModuleSettings(key: String, context: android.content.Context) {
                         Prefs.setInt(context, "ulk_daily_limit", it.toInt())
                     },
                     formatter = { if (it == 0f) "No Limit" else "${it.toInt()} times" }
+                )
+                if (ulLimit > 0) {
+                    var limitAlert by remember { mutableStateOf(Prefs.getBool(context, "ulk_limit_alert", true)) }
+                    SettingSwitch(
+                        label = "Alert on Limit",
+                        checked = limitAlert,
+                        onCheckedChange = {
+                            limitAlert = it
+                            Prefs.setBool(context, "ulk_limit_alert", it)
+                        }
+                    )
+                }
+                var debounce by remember { mutableStateOf(Prefs.getInt(context, "ulk_debounce", 5000).toFloat()) }
+                SettingSlider(
+                    label = "Debounce",
+                    value = debounce,
+                    valueRange = 0f..30000f,
+                    onValueChange = {
+                        debounce = it
+                        Prefs.setInt(context, "ulk_debounce", it.toInt())
+                    },
+                    formatter = { "${it.toInt()} ms" }
                 )
             }
             "storage" -> {
@@ -322,6 +459,33 @@ fun ModuleSettings(key: String, context: android.content.Context) {
                     },
                     formatter = { if (it == 0f) "No Limit" else "${it.toInt()} times" }
                 )
+                var showStreak by remember { mutableStateOf(Prefs.getBool(context, "fap_show_streak", true)) }
+                SettingSwitch(
+                    label = "Show Streak",
+                    checked = showStreak,
+                    onCheckedChange = {
+                        showStreak = it
+                        Prefs.setBool(context, "fap_show_streak", it)
+                    }
+                )
+                var showYesterday by remember { mutableStateOf(Prefs.getBool(context, "fap_show_yesterday", true)) }
+                SettingSwitch(
+                    label = "Show Yesterday",
+                    checked = showYesterday,
+                    onCheckedChange = {
+                        showYesterday = it
+                        Prefs.setBool(context, "fap_show_yesterday", it)
+                    }
+                )
+                var showAllTime by remember { mutableStateOf(Prefs.getBool(context, "fap_show_all_time", true)) }
+                SettingSwitch(
+                    label = "Show All-Time Total",
+                    checked = showAllTime,
+                    onCheckedChange = {
+                        showAllTime = it
+                        Prefs.setBool(context, "fap_show_all_time", it)
+                    }
+                )
                 
                 Button(
                     onClick = {
@@ -359,6 +523,17 @@ fun ModuleSettings(key: String, context: android.content.Context) {
                         formatter = { "${it.toInt()}m" }
                     )
                 }
+                var dailyLimit by remember { mutableStateOf(Prefs.getInt(context, "spd_daily_limit", 10).toFloat()) }
+                SettingSlider(
+                    label = "Daily Test Limit",
+                    value = dailyLimit,
+                    valueRange = 1f..100f,
+                    onValueChange = {
+                        dailyLimit = it
+                        Prefs.setInt(context, "spd_daily_limit", it.toInt())
+                    },
+                    formatter = { "${it.toInt()} tests" }
+                )
                 var wifiOnly by remember { mutableStateOf(Prefs.getBool(context, "spd_wifi_only", true)) }
                 SettingSwitch(
                     label = "WiFi Only",
