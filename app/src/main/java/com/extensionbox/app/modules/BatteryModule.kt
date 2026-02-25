@@ -48,6 +48,71 @@ class BatteryModule : Module {
     override fun description(): String = "Current, power, temperature, health"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running
+    @androidx.compose.runtime.Composable
+    override fun composableContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+        if (sys.rootProvider == com.extensionbox.app.SystemAccess.RootProvider.NONE) return
+
+        androidx.compose.material3.HorizontalDivider(
+            modifier = androidx.compose.ui.Modifier.padding(vertical = 12.dp),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant
+        )
+
+        var limitEn by androidx.compose.runtime.remember { 
+            androidx.compose.runtime.mutableStateOf(com.extensionbox.app.Prefs.getBool(ctx, "bat_charge_limit_en", false)) 
+        }
+        var limitVal by androidx.compose.runtime.remember { 
+            androidx.compose.runtime.mutableStateOf(com.extensionbox.app.Prefs.getInt(ctx, "bat_charge_limit_val", 80).toFloat()) 
+        }
+
+        val scope = androidx.compose.runtime.rememberCoroutineScope()
+
+        androidx.compose.foundation.layout.Column {
+            androidx.compose.foundation.layout.Row(
+                modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+            ) {
+                androidx.compose.foundation.layout.Column(modifier = androidx.compose.ui.Modifier.weight(1f)) {
+                    androidx.compose.material3.Text(
+                        "Battery Charge Limiter",
+                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                    )
+                    androidx.compose.material3.Text(
+                        "Stop charging at ${limitVal.toInt()}%",
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                androidx.compose.material3.Switch(
+                    checked = limitEn,
+                    onCheckedChange = {
+                        limitEn = it
+                        com.extensionbox.app.Prefs.setBool(ctx, "bat_charge_limit_en", it)
+                        if (!it) {
+                            scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                sys.setChargingEnabled(true)
+                            }
+                        }
+                    }
+                )
+            }
+
+            if (limitEn) {
+                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.ui.Modifier.height(8.dp))
+                androidx.compose.material3.Slider(
+                    value = limitVal,
+                    onValueChange = {
+                        limitVal = it
+                        com.extensionbox.app.Prefs.setInt(ctx, "bat_charge_limit_val", it.toInt())
+                    },
+                    valueRange = 50f..100f,
+                    steps = 49
+                )
+            }
+        }
+    }
+
     override fun priority(): Int = 10
 
     override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "bat_interval", 10000) } ?: 10000

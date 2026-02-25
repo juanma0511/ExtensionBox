@@ -390,57 +390,17 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         // --- Monitoring Section ---
         SettingsGroup(title = "Monitoring", icon = Icons.Default.Analytics) {
             AppCard {
-                if (sysAccess?.rootProvider != SystemAccess.RootProvider.NONE) {
-                    var limitEn by remember { mutableStateOf(Prefs.getBool(context, "bat_charge_limit_en", false)) }
-                    SettingsToggle(
-                        title = "Battery Charge Limiter",
-                        summary = "Stop charging at a specific level (Root required)",
-                        icon = Icons.Default.BatteryChargingFull,
-                        checked = limitEn,
-                        onCheckedChange = {
-                            limitEn = it
-                            Prefs.setBool(context, "bat_charge_limit_en", it)
-                            if (!it) {
-                                // Explicitly re-enable charging if disabled
-                                scope.launch(Dispatchers.IO) {
-                                    sysAccess?.setChargingEnabled(true)
-                                }
-                            }
-                        }
-                    )
-                    
-                    if (limitEn) {
-                        var limitVal by remember { mutableStateOf(Prefs.getInt(context, "bat_charge_limit_val", 80).toFloat()) }
-                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(text = "Charge Limit", style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    text = "${limitVal.toInt()}%",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Slider(
-                                value = limitVal,
-                                onValueChange = { 
-                                    limitVal = it
-                                    Prefs.setInt(context, "bat_charge_limit_val", it.toInt())
-                                },
-                                valueRange = 50f..100f,
-                                steps = 49
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                }
-
                 var resetFull by remember { mutableStateOf(Prefs.getBool(context, "scr_reset_full", true)) }
+                SettingsToggle(
+                    title = "Reset on Full Charge",
+                    summary = "Clear stats when battery reaches 100%",
+                    icon = Icons.Default.BatteryChargingFull,
+                    checked = resetFull,
+                    onCheckedChange = {
+                        resetFull = it
+                        Prefs.setBool(context, "scr_reset_full", it)
+                    }
+                )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
 

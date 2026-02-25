@@ -331,6 +331,14 @@ fun KernelCard(
                             }
                         }
                     }
+
+                    // --- Render Module-specific Controls (e.g. Battery Limiter) ---
+                    val module = ModuleRegistry.getModule(key)
+                    val sysAccess = viewModel.sysAccess.collectAsState().value
+                    if (module != null && sysAccess != null) {
+                        module.composableContent(context, sysAccess)
+                    }
+
                     if (key == "fap") {
                         Spacer(Modifier.height(16.dp))
                         Button(

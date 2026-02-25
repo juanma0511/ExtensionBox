@@ -22,6 +22,12 @@ interface Module {
     fun reset() {}
 
     /**
+     * Optional Compose UI content for the module's detail view (e.g., sliders, toggles).
+     */
+    @androidx.compose.runtime.Composable
+    fun composableContent(ctx: Context, sys: SystemAccess) {}
+
+    /**
      * Priority for notification ordering. Lower = higher priority.
      * Battery=10, Screen=20, Sleep=30, Network=40, Data=50, Unlock=60, Steps=70, SpeedTest=80, etc.
      */

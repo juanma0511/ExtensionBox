@@ -33,6 +33,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _historyData = MutableStateFlow<Map<String, List<ModuleDataEntity>>>(emptyMap())
     val historyData: StateFlow<Map<String, List<ModuleDataEntity>>> = _historyData.asStateFlow()
 
+    private val _sysAccess = MutableStateFlow<com.extensionbox.app.SystemAccess?>(null)
+    val sysAccess: StateFlow<com.extensionbox.app.SystemAccess?> = _sysAccess.asStateFlow()
+
     val moduleOrder = mutableStateListOf<String>()
     val expandedStates = mutableStateMapOf<String, Boolean>()
 
@@ -40,6 +43,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val visibleModules: StateFlow<List<String>> = _visibleModules.asStateFlow()
 
     init {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            _sysAccess.value = com.extensionbox.app.SystemAccess(context)
+        }
         loadOrder()
         startDataPolling()
     }
