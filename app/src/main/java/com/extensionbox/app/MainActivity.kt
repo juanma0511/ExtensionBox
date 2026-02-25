@@ -89,10 +89,30 @@ fun MainApp() {
     val currentScreen = screens.find { it.route == currentDestination?.route } ?: Screen.Dashboard
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-        AppScaffold(
-            title = currentScreen.title,
-            scrollBehavior = scrollBehavior,
-            bottomBar = {
+    val dashboardViewModel: com.extensionbox.app.ui.viewmodel.DashboardViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
+    val isTopLevel = currentDestination?.route in screens.map { it.route }
+    val title = if (isTopLevel) {
+        currentScreen.title
+    } else if (currentDestination?.route?.startsWith("module/") == true) {
+        val key = navBackStackEntry?.arguments?.getString("key") ?: ""
+        com.extensionbox.app.ui.ModuleRegistry.nameFor(key)
+    } else {
+        ""
+    }
+
+    AppScaffold(
+        title = title,
+        scrollBehavior = scrollBehavior,
+        navigationIcon = {
+            if (!isTopLevel) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+            }
+        },
+        bottomBar = {
+            if (isTopLevel) {
                 Column {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     NavigationBar(
@@ -128,13 +148,13 @@ fun MainApp() {
                     }
                 }
             }
-            ) { innerPadding ->
-                NavHost(
-                    navController = navController,
-                    startDestination = Screen.Dashboard.route,
-                    modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
-                    enterTransition = { 
-         
+        }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Dashboard.route,
+            modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
+            enterTransition = { 
                 fadeIn(animationSpec = tween(400)) + slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(400))
             },
             exitTransition = { 
@@ -147,10 +167,16 @@ fun MainApp() {
                 fadeOut(animationSpec = tween(400)) + slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(400))
             }
         ) {
-            composable(Screen.Dashboard.route) { DashboardScreen() }
+            composable(Screen.Dashboard.route) { DashboardScreen(viewModel = dashboardViewModel, onModuleClick = { key ->
+                navController.navigate("module/$key")
+            }) }
             composable(Screen.Extensions.route) { ExtensionsScreen() }
             composable(Screen.Settings.route) { SettingsScreen() }
             composable(Screen.About.route) { AboutScreen() }
+            composable("module/{key}") { backStackEntry ->
+                val key = backStackEntry.arguments?.getString("key") ?: return@composable
+                ModuleDetailScreen(moduleKey = key, viewModel = dashboardViewModel)
+            }
         }
     }
 }

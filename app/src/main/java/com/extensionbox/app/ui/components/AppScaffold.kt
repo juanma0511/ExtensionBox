@@ -36,6 +36,7 @@ import androidx.compose.material3.ScaffoldDefaults
 fun AppScaffold(
     title: String,
     scrollBehavior: TopAppBarScrollBehavior? = null,
+    navigationIcon: @Composable () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
@@ -54,6 +55,7 @@ fun AppScaffold(
                         fontWeight = FontWeight.Bold
                     )
                 },
+                navigationIcon = navigationIcon,
                 scrollBehavior = localScrollBehavior,
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,

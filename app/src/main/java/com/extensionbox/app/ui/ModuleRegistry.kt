@@ -50,4 +50,23 @@ object ModuleRegistry {
     fun nameFor(key: String): String {
         return MODULES.find { it.key == key }?.name ?: key
     }
+
+    fun getModule(key: String): com.extensionbox.app.modules.Module? {
+        return when (key) {
+            "battery" -> com.extensionbox.app.modules.BatteryModule()
+            "cpu_ram" -> com.extensionbox.app.modules.CpuRamModule()
+            "screen" -> com.extensionbox.app.modules.ScreenModule()
+            "sleep" -> com.extensionbox.app.modules.SleepModule()
+            "network" -> com.extensionbox.app.modules.NetworkModule()
+            "data" -> com.extensionbox.app.modules.DataUsageModule()
+            "unlock" -> com.extensionbox.app.modules.UnlockModule()
+            "storage" -> com.extensionbox.app.modules.StorageModule()
+            "connection" -> com.extensionbox.app.modules.ConnectionModule()
+            "uptime" -> com.extensionbox.app.modules.UptimeModule()
+            "steps" -> com.extensionbox.app.modules.StepModule()
+            "speedtest" -> com.extensionbox.app.modules.SpeedTestModule()
+            "fap" -> com.extensionbox.app.modules.FapCounterModule()
+            else -> null
+        }
+    }
 }

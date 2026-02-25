@@ -39,6 +39,8 @@ import com.extensionbox.app.MonitorService
 import com.extensionbox.app.Prefs
 import com.extensionbox.app.db.ModuleDataEntity
 import com.extensionbox.app.ui.ModuleRegistry
+import com.extensionbox.app.ui.components.Sparkline
+import com.extensionbox.app.ui.components.extractPoints
 import com.extensionbox.app.ui.viewmodel.DashboardViewModel
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
@@ -46,7 +48,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
+fun DashboardScreen(viewModel: DashboardViewModel = viewModel(), onModuleClick: (String) -> Unit = {}) {
     val context = LocalContext.current
     val isRunning by viewModel.isRunning.collectAsState()
     val activeCount by viewModel.activeCount.collectAsState()
@@ -92,8 +94,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
                                 key = key,
                                 data = data,
                                 history = historyData[key] ?: emptyList(),
-                                isExpanded = viewModel.isExpanded(key),
-                                onExpandToggle = { viewModel.toggleExpansion(key) },
+                                onClick = { onModuleClick(key) },
                                 reorderableItemScope = this,
                                 modifier = Modifier
                                     .graphicsLayer {
@@ -114,7 +115,6 @@ fun SystemPulseHero(isRunning: Boolean, activeCount: Int, dashData: Map<String, 
     val temp = dashData["battery"]?.get("battery.temp") ?: "--"
     val cpu = dashData["cpu_ram"]?.get("cpu.usage")?.removeSuffix("%")?.toFloatOrNull()?.toInt() ?: 0
 
-    // Ripple state
     val rippleScope = rememberCoroutineScope()
     val rippleScale = remember { Animatable(0f) }
     val rippleAlpha = remember { Animatable(0f) }
@@ -146,9 +146,7 @@ fun SystemPulseHero(isRunning: Boolean, activeCount: Int, dashData: Map<String, 
                     )
                 }
 
-                // Play/Pause button with ripple
                 Box(contentAlignment = Alignment.Center) {
-                    // Ripple canvas behind the button
                     Canvas(modifier = Modifier.size(96.dp)) {
                         val radius = size.minDimension / 2 * rippleScale.value
                         drawCircle(
@@ -166,7 +164,6 @@ fun SystemPulseHero(isRunning: Boolean, activeCount: Int, dashData: Map<String, 
                                 val intent = Intent(context, MonitorService::class.java)
                                 ContextCompat.startForegroundService(context, intent)
                             }
-                            // Trigger ripple
                             rippleScope.launch {
                                 rippleScale.snapTo(0f)
                                 rippleAlpha.snapTo(0.8f)
@@ -226,12 +223,10 @@ fun KernelCard(
     key: String, 
     data: Map<String, String>, 
     history: List<ModuleDataEntity>,
-    isExpanded: Boolean, 
-    onExpandToggle: () -> Unit,
+    onClick: () -> Unit,
     reorderableItemScope: ReorderableCollectionItemScope,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     val icon = ModuleRegistry.iconFor(key)
     val name = ModuleRegistry.nameFor(key)
     val primaryValue = data.values.firstOrNull() ?: ""
@@ -239,10 +234,9 @@ fun KernelCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onExpandToggle() },
+            .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        border = if (isExpanded) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)) else null
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -273,12 +267,10 @@ fun KernelCard(
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    if (!isExpanded) {
-                        Text(text = primaryValue, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
-                    }
+                    Text(text = primaryValue, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                 }
 
-                if (history.isNotEmpty() && !isExpanded) {
+                if (history.isNotEmpty()) {
                     Box(modifier = Modifier.width(60.dp).height(30.dp)) {
                         Sparkline(
                             points = extractPoints(key, history),
@@ -290,204 +282,12 @@ fun KernelCard(
                 }
 
                 Icon(
-                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = null,
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "Details",
                     modifier = Modifier.padding(start = 8.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
-            AnimatedVisibility(visible = isExpanded) {
-                Column(modifier = Modifier.padding(top = 16.dp)) {
-                    if (history.isNotEmpty()) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().height(100.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        ) {
-                            Box(modifier = Modifier.padding(12.dp)) {
-                                Sparkline(
-                                    points = extractPoints(key, history),
-                                    modifier = Modifier.fillMaxSize(),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fillGradient = true,
-                                    animate = true
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(16.dp))
-                    }
-
-                    // Stats Grid
-                    val items = data.toList()
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items.chunked(2).forEach { rowItems ->
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                rowItems.forEach { pair ->
-                                    val label = pair.first.substringAfterLast('.').replace("_", " ").replaceFirstChar { it.uppercase() }
-                                    StatItem(label = label, value = pair.second, modifier = Modifier.weight(1f))
-                                }
-                                if (rowItems.size == 1) Spacer(Modifier.weight(1f))
-                            }
-                        }
-                    }
-
-                    // --- Render Module-specific Controls (e.g. Battery Limiter) ---
-                    val module = ModuleRegistry.getModule(key)
-                    val sysAccess = viewModel.sysAccess.collectAsState().value
-                    if (module != null && sysAccess != null) {
-                        module.composableContent(context, sysAccess)
-                    }
-
-                    if (key == "fap") {
-                        Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                val intent = Intent(context, MonitorService::class.java)
-                                    .setAction("com.extensionbox.app.FAP_INCREMENT")
-                                context.startService(intent)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Log Action")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun StatItem(label: String, value: String, modifier: Modifier) {
-    Column(modifier = modifier.padding(vertical = 4.dp)) {
-        Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-    }
-}
-
-fun extractPoints(key: String, history: List<ModuleDataEntity>): List<Float> {
-    return history.mapNotNull { entity ->
-        when (key) {
-            "battery"    -> entity.data["battery.level"]?.removeSuffix("%")?.toFloatOrNull()
-            "cpu_ram"    -> entity.data["cpu.usage"]?.removeSuffix("%")?.toFloatOrNull()
-            "sleep"      -> entity.data["sleep.deep_pct"]?.removeSuffix("%")?.toFloatOrNull()
-            "network"    -> entity.data["net.download"]?.let { parseSpeedToKbps(it) }
-            "data"       -> entity.data["data.today_total"]?.let { parseBytesToKb(it) }
-            "unlock"     -> entity.data["unlock.today"]?.toFloatOrNull()
-            "storage"    -> entity.data["storage.pct"]?.removeSuffix("%")?.toFloatOrNull()
-            "connection" -> entity.data["conn.rssi"]?.substringBefore(" ")?.toFloatOrNull()?.let { -it }
-            "screen"     -> entity.data["screen.on_time"]?.let { parseDurationToMinutes(it) }
-            "uptime"     -> entity.data["uptime.duration"]?.let { parseDurationToMinutes(it) }
-            "steps"      -> entity.data["steps.today"]?.replace(",", "")?.toFloatOrNull()
-            "speedtest"  -> entity.data["speedtest.download"]?.substringBefore(" ")?.toFloatOrNull()
-            "fap"        -> entity.data["fap.today"]?.toFloatOrNull()
-            else         -> null
-        }
-    }
-}
-
-fun parseSpeedToKbps(speed: String): Float? {
-    val parts = speed.trim().split(" ")
-    val value = parts.getOrNull(0)?.toFloatOrNull() ?: return null
-    val unit = parts.getOrNull(1) ?: return value
-    return when {
-        unit.startsWith("MB") -> value * 1024f
-        unit.startsWith("KB") -> value
-        unit.startsWith("B")  -> value / 1024f
-        else -> value
-    }
-}
-
-fun parseBytesToKb(bytes: String): Float? {
-    val parts = bytes.trim().split(" ")
-    val value = parts.getOrNull(0)?.toFloatOrNull() ?: return null
-    val unit = parts.getOrNull(1) ?: return value
-    return when {
-        unit.startsWith("GB") -> value * 1024f * 1024f
-        unit.startsWith("MB") -> value * 1024f
-        unit.startsWith("KB") -> value
-        unit.startsWith("B")  -> value / 1024f
-        else -> value
-    }
-}
-
-fun parseDurationToMinutes(duration: String): Float? {
-    var total = 0f
-    Regex("""(\d+)d""").find(duration)?.groupValues?.get(1)?.toFloatOrNull()?.let { total += it * 1440f }
-    Regex("""(\d+)h""").find(duration)?.groupValues?.get(1)?.toFloatOrNull()?.let { total += it * 60f }
-    Regex("""(\d+)m""").find(duration)?.groupValues?.get(1)?.toFloatOrNull()?.let { total += it }
-    Regex("""(\d+)s""").find(duration)?.groupValues?.get(1)?.toFloatOrNull()?.let { total += it / 60f }
-    return if (total > 0f) total else null
-}
-
-@Composable
-fun Sparkline(
-    points: List<Float>,
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary,
-    strokeWidth: androidx.compose.ui.unit.Dp = 2.dp,
-    fillGradient: Boolean = false,
-    animate: Boolean = false
-) {
-    if (points.size < 2) return
-    val min = points.minOrNull() ?: 0f
-    val max = points.maxOrNull() ?: 1f
-    val range = max - min
-
-    val drawProgress = remember { Animatable(if (animate) 0f else 1f) }
-    LaunchedEffect(Unit) {
-        if (animate) {
-            drawProgress.snapTo(0f)
-            drawProgress.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing)
-            )
-        }
-    }
-    val progress = drawProgress.value
-
-    Canvas(modifier = modifier) {
-        val width = size.width
-        val height = size.height
-        val stepX = width / (points.size - 1)
-
-        val path = Path()
-        points.forEachIndexed { index, value ->
-            val x = index * stepX
-            // When all values are the same (range==0): show at top if value>0, bottom if 0
-            val y = if (range == 0f) {
-                if (value > 0f) 0f else height
-            } else {
-                height - ((value - min) / range * height)
-            }
-            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-
-        clipRect(right = width * progress) {
-            if (fillGradient) {
-                val fillPath = Path().apply {
-                    addPath(path)
-                    lineTo(width, height)
-                    lineTo(0f, height)
-                    close()
-                }
-                drawPath(
-                    path = fillPath,
-                    brush = Brush.verticalGradient(
-                        colors = listOf(color.copy(alpha = 0.3f), Color.Transparent)
-                    )
-                )
-            }
-
-            drawPath(
-                path = path,
-                color = color,
-                style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-            )
         }
     }
 }

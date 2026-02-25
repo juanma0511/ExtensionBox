@@ -6,6 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationCompat
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
@@ -57,22 +60,22 @@ class BatteryModule : Module {
             color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant
         )
 
-        var limitEn by androidx.compose.runtime.remember { 
-            androidx.compose.runtime.mutableStateOf(com.extensionbox.app.Prefs.getBool(ctx, "bat_charge_limit_en", false)) 
+        var limitEn by remember { 
+            mutableStateOf(com.extensionbox.app.Prefs.getBool(ctx, "bat_charge_limit_en", false)) 
         }
-        var limitVal by androidx.compose.runtime.remember { 
-            androidx.compose.runtime.mutableStateOf(com.extensionbox.app.Prefs.getInt(ctx, "bat_charge_limit_val", 80).toFloat()) 
+        var limitVal by remember { 
+            mutableStateOf(com.extensionbox.app.Prefs.getInt(ctx, "bat_charge_limit_val", 80).toFloat()) 
         }
 
-        val scope = androidx.compose.runtime.rememberCoroutineScope()
+        val scope = rememberCoroutineScope()
 
-        androidx.compose.foundation.layout.Column {
-            androidx.compose.foundation.layout.Row(
+        Column {
+            Row(
                 modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                androidx.compose.foundation.layout.Column(modifier = androidx.compose.ui.Modifier.weight(1f)) {
+                Column(modifier = androidx.compose.ui.Modifier.weight(1f)) {
                     androidx.compose.material3.Text(
                         "Battery Charge Limiter",
                         style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
@@ -90,7 +93,7 @@ class BatteryModule : Module {
                         limitEn = it
                         com.extensionbox.app.Prefs.setBool(ctx, "bat_charge_limit_en", it)
                         if (!it) {
-                            scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            kotlinx.coroutines.MainScope().launch(kotlinx.coroutines.Dispatchers.IO) {
                                 sys.setChargingEnabled(true)
                             }
                         }
@@ -99,7 +102,7 @@ class BatteryModule : Module {
             }
 
             if (limitEn) {
-                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.ui.Modifier.height(8.dp))
+                Spacer(modifier = androidx.compose.ui.Modifier.height(8.dp))
                 androidx.compose.material3.Slider(
                     value = limitVal,
                     onValueChange = {
