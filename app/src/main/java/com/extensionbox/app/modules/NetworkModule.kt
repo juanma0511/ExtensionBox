@@ -3,9 +3,11 @@ package com.extensionbox.app.modules
 import android.content.Context
 import android.net.TrafficStats
 import android.os.SystemClock
+import androidx.compose.runtime.*
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
 import com.extensionbox.app.SystemAccess
+import com.extensionbox.app.ui.components.SettingSlider
 import java.util.LinkedHashMap
 import java.util.Locale
 
@@ -148,6 +150,23 @@ class NetworkModule : Module {
             d["net.iface.$name.tx"] = Fmt.bytes(stats.second)
         }
         return d
+    }
+
+    @androidx.compose.runtime.Composable
+    override fun settingsContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+        var interval by remember { 
+            mutableStateOf(Prefs.getInt(ctx, "net_interval", 2000).toFloat()) 
+        }
+        SettingSlider(
+            label = "Update Interval",
+            value = interval,
+            onValueChange = {
+                interval = it
+                Prefs.setInt(ctx, "net_interval", it.toInt())
+            },
+            valueRange = 1000f..30000f,
+            formatter = { "${it.toInt() / 1000}s" }
+        )
     }
 
     override fun checkAlerts(ctx: Context) {}

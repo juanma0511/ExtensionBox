@@ -3,11 +3,17 @@ package com.extensionbox.app.modules
 import android.app.NotificationManager
 import android.content.Context
 import android.net.TrafficStats
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationCompat
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
 import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
+import com.extensionbox.app.ui.components.SettingSlider
+import com.extensionbox.app.ui.components.SettingSwitch
 import java.util.Calendar
 import java.util.LinkedHashMap
 import java.util.Locale
@@ -156,6 +162,71 @@ class DataUsageModule : Module {
         d["data.today_mobile"] = Fmt.bytes(dailyMobile)
         d["data.month_total"] = Fmt.bytes(monthTotal)
         return d
+    }
+
+    @androidx.compose.runtime.Composable
+    override fun settingsContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+        var interval by remember { mutableStateOf(Prefs.getInt(ctx, "dat_interval", 60000).toFloat()) }
+        
+        Column {
+            SettingSlider(
+                label = "Update Interval",
+                value = interval,
+                onValueChange = {
+                    interval = it
+                    Prefs.setInt(ctx, "dat_interval", it.toInt())
+                },
+                valueRange = 10000f..600000f,
+                formatter = { if (it >= 60000f) "${it.toInt() / 60000}m" else "${it.toInt() / 1000}s" }
+            )
+
+            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            var split by remember { mutableStateOf(Prefs.getBool(ctx, "dat_show_breakdown", true)) }
+            SettingSwitch(
+                label = "WiFi/Mobile Split",
+                checked = split,
+                onCheckedChange = {
+                    split = it
+                    Prefs.setBool(ctx, "dat_show_breakdown", it)
+                }
+            )
+            var planLimit by remember { mutableStateOf(Prefs.getInt(ctx, "dat_plan_limit", 0).toFloat()) }
+            SettingSlider(
+                label = "Monthly Plan Limit",
+                value = planLimit,
+                valueRange = 0f..10000f,
+                onValueChange = {
+                    planLimit = it
+                    Prefs.setInt(ctx, "dat_plan_limit", it.toInt())
+                },
+                formatter = { if (it == 0f) "No Limit" else "${it.toInt()} MB" }
+            )
+            if (planLimit > 0) {
+                var alertPct by remember { mutableStateOf(Prefs.getInt(ctx, "dat_plan_alert_pct", 90).toFloat()) }
+                SettingSlider(
+                    label = "Plan Alert Percentage",
+                    value = alertPct,
+                    valueRange = 50f..100f,
+                    onValueChange = {
+                        alertPct = it
+                        Prefs.setInt(ctx, "dat_plan_alert_pct", it.toInt())
+                    },
+                    formatter = { "${it.toInt()}%" }
+                )
+            }
+            var billingDay by remember { mutableStateOf(Prefs.getInt(ctx, "dat_billing_day", 1).toFloat()) }
+            SettingSlider(
+                label = "Billing Day",
+                value = billingDay,
+                valueRange = 1f..31f,
+                onValueChange = {
+                    billingDay = it
+                    Prefs.setInt(ctx, "dat_billing_day", it.toInt())
+                },
+                formatter = { "${it.toInt()}" }
+            )
+        }
     }
 
     override fun checkAlerts(ctx: Context) {

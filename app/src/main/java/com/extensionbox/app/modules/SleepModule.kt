@@ -2,9 +2,11 @@ package com.extensionbox.app.modules
 
 import android.content.Context
 import android.os.SystemClock
+import androidx.compose.runtime.*
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
 import com.extensionbox.app.SystemAccess
+import com.extensionbox.app.ui.components.SettingSlider
 import java.util.LinkedHashMap
 import java.util.Locale
 import kotlin.math.max
@@ -68,6 +70,23 @@ class SleepModule : Module {
         d["sleep.awake_time"] = Fmt.duration(up)
         d["sleep.awake_percentage"] = Fmt.percentage(100 - pct)
         return d
+    }
+
+    @androidx.compose.runtime.Composable
+    override fun settingsContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+        var interval by remember { 
+            mutableStateOf(Prefs.getInt(ctx, "slp_interval", 30000).toFloat()) 
+        }
+        SettingSlider(
+            label = "Update Interval",
+            value = interval,
+            onValueChange = {
+                interval = it
+                Prefs.setInt(ctx, "slp_interval", it.toInt())
+            },
+            valueRange = 5000f..300000f,
+            formatter = { if (it >= 60000f) "${it.toInt() / 60000}m" else "${it.toInt() / 1000}s" }
+        )
     }
 
     override fun checkAlerts(ctx: Context) {}

@@ -6,10 +6,12 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
 import com.extensionbox.app.SystemAccess
+import com.extensionbox.app.ui.components.SettingSlider
 import java.util.*
 
 class AppUsageModule : Module {
@@ -87,6 +89,21 @@ class AppUsageModule : Module {
     }
 
     override fun checkAlerts(ctx: Context) {}
+
+    @androidx.compose.runtime.Composable
+    override fun settingsContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+        var interval by remember { mutableStateOf(Prefs.getInt(ctx, "usage_interval", 30000).toFloat()) }
+        SettingSlider(
+            label = "Update Interval",
+            value = interval,
+            onValueChange = {
+                interval = it
+                Prefs.setInt(ctx, "usage_interval", it.toInt())
+            },
+            valueRange = 10000f..300000f,
+            formatter = { if (it >= 60000f) "${it.toInt() / 60000}m" else "${it.toInt() / 1000}s" }
+        )
+    }
 
     @androidx.compose.runtime.Composable
     override fun composableContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {

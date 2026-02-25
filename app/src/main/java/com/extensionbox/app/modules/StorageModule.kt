@@ -5,11 +5,17 @@ import android.content.Context
 import android.os.Environment
 import android.os.StatFs
 import android.os.SystemClock
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationCompat
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
 import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
+import com.extensionbox.app.ui.components.SettingSlider
+import com.extensionbox.app.ui.components.SettingSwitch
 import java.util.LinkedHashMap
 import java.util.Locale
 
@@ -110,6 +116,49 @@ class StorageModule : Module {
             d["storage.io_write"] = Fmt.speed(writeSpeed)
         }
         return d
+    }
+
+    @androidx.compose.runtime.Composable
+    override fun settingsContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+        var interval by remember { mutableStateOf(Prefs.getInt(ctx, "sto_interval", 10000).toFloat()) }
+        
+        Column {
+            SettingSlider(
+                label = "Update Interval",
+                value = interval,
+                onValueChange = {
+                    interval = it
+                    Prefs.setInt(ctx, "sto_interval", it.toInt())
+                },
+                valueRange = 10000f..600000f,
+                formatter = { if (it >= 60000f) "${it.toInt() / 60000}m" else "${it.toInt() / 1000}s" }
+            )
+
+            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            var stoAlert by remember { mutableStateOf(Prefs.getBool(ctx, "sto_low_alert", true)) }
+            SettingSwitch(
+                label = "Low Storage Alert",
+                checked = stoAlert,
+                onCheckedChange = {
+                    stoAlert = it
+                    Prefs.setBool(ctx, "sto_low_alert", it)
+                }
+            )
+            if (stoAlert) {
+                var stoThresh by remember { mutableStateOf(Prefs.getInt(ctx, "sto_low_thresh_mb", 1000).toFloat()) }
+                SettingSlider(
+                    label = "Low Alert Threshold",
+                    value = stoThresh,
+                    valueRange = 100f..5000f,
+                    onValueChange = {
+                        stoThresh = it
+                        Prefs.setInt(ctx, "sto_low_thresh_mb", it.toInt())
+                    },
+                    formatter = { "${it.toInt()} MB" }
+                )
+            }
+        }
     }
 
     override fun checkAlerts(ctx: Context) {

@@ -8,6 +8,8 @@ import android.content.IntentFilter
 import android.os.BatteryManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationCompat
 import com.extensionbox.app.Fmt
@@ -15,6 +17,8 @@ import com.extensionbox.app.Prefs
 import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
 import com.extensionbox.app.db.AppDatabase
+import com.extensionbox.app.ui.components.SettingSlider
+import com.extensionbox.app.ui.components.SettingSwitch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -77,20 +81,44 @@ class BatteryModule : Module {
                 text = "Screen On: ${Fmt.duration(getTotalOn())}",
                 style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
             )
+
+            // App Usage integration (if enabled)
+            val useUsage = Prefs.isModuleEnabled(ctx, "app_usage", true)
+            if (useUsage) {
+                Spacer(modifier = Modifier.height(12.dp))
+                val usageMod = remember { AppUsageModule() }
+                usageMod.start(ctx, sys)
+                usageMod.tick() // Refresh data
+                usageMod.composableContent(ctx, sys)
+            }
         }
     }
 
     @androidx.compose.runtime.Composable
     override fun settingsContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
-        if (sys.rootProvider != com.extensionbox.app.SystemAccess.RootProvider.NONE) {
-            var limitEn by remember { 
-                mutableStateOf(com.extensionbox.app.Prefs.getBool(ctx, "bat_charge_limit_en", false)) 
-            }
-            var limitVal by remember { 
-                mutableStateOf(com.extensionbox.app.Prefs.getInt(ctx, "bat_charge_limit_val", 80).toFloat()) 
-            }
+        var interval by remember { mutableStateOf(Prefs.getInt(ctx, "bat_interval", 10000).toFloat()) }
+        
+        Column {
+            SettingSlider(
+                label = "Update Interval",
+                value = interval,
+                valueRange = 1000f..60000f,
+                onValueChange = {
+                    interval = it
+                    Prefs.setInt(ctx, "bat_interval", it.toInt())
+                },
+                formatter = { "${it.toInt() / 1000}s" }
+            )
 
-            Column {
+            if (sys.rootProvider != com.extensionbox.app.SystemAccess.RootProvider.NONE) {
+                androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                var limitEn by remember { 
+                    mutableStateOf(com.extensionbox.app.Prefs.getBool(ctx, "bat_charge_limit_en", false)) 
+                }
+                var limitVal by remember { 
+                    mutableStateOf(com.extensionbox.app.Prefs.getInt(ctx, "bat_charge_limit_val", 80).toFloat()) 
+                }
+
                 Row(
                     modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
@@ -135,6 +163,77 @@ class BatteryModule : Module {
                     )
                 }
             }
+
+            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            var lowAlert by remember { mutableStateOf(Prefs.getBool(ctx, "bat_low_alert", true)) }
+            SettingSwitch(
+                label = "Low Battery Alert",
+                checked = lowAlert,
+                onCheckedChange = {
+                    lowAlert = it
+                    Prefs.setBool(ctx, "bat_low_alert", it)
+                }
+            )
+            if (lowAlert) {
+                var lowThresh by remember { mutableStateOf(Prefs.getInt(ctx, "bat_low_thresh", 15).toFloat()) }
+                SettingSlider(
+                    label = "Low Alert Threshold",
+                    value = lowThresh,
+                    valueRange = 5f..50f,
+                    onValueChange = {
+                        lowThresh = it
+                        Prefs.setInt(ctx, "bat_low_thresh", it.toInt())
+                    },
+                    formatter = { "${it.toInt()}%" }
+                )
+            }
+            var tempAlert by remember { mutableStateOf(Prefs.getBool(ctx, "bat_temp_alert", true)) }
+            SettingSwitch(
+                label = "High Temp Alert",
+                checked = tempAlert,
+                onCheckedChange = {
+                    tempAlert = it
+                    Prefs.setBool(ctx, "bat_temp_alert", it)
+                }
+            )
+            if (tempAlert) {
+                var tempThresh by remember { mutableStateOf(Prefs.getInt(ctx, "bat_temp_thresh", 42).toFloat()) }
+                SettingSlider(
+                    label = "Temp Threshold",
+                    value = tempThresh,
+                    valueRange = 30f..60f,
+                    onValueChange = {
+                        tempThresh = it
+                        Prefs.setInt(ctx, "bat_temp_thresh", it.toInt())
+                    },
+                    formatter = { "${it.toInt()}°C" }
+                )
+            }
+            
+            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            var showDrain by remember { mutableStateOf(Prefs.getBool(ctx, "scr_show_drain", true)) }
+            SettingSwitch(
+                label = "Show Screen Drain",
+                checked = showDrain,
+                onCheckedChange = {
+                    showDrain = it
+                    Prefs.setBool(ctx, "scr_show_drain", it)
+                }
+            )
+            var timeLimit by remember { mutableStateOf(Prefs.getInt(ctx, "scr_time_limit", 0).toFloat()) }
+            SettingSlider(
+                label = "Screen Time Limit",
+                value = timeLimit,
+                valueRange = 0f..600f,
+                steps = 12,
+                onValueChange = {
+                    timeLimit = it
+                    Prefs.setInt(ctx, "scr_time_limit", it.toInt())
+                },
+                formatter = { if (it == 0f) "Disabled" else "${it.toInt()}m" }
+            )
         }
     }
 

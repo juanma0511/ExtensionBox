@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
 import com.extensionbox.app.SystemAccess
+import com.extensionbox.app.ui.components.SettingSlider
 import java.util.LinkedHashMap
 import java.util.Locale
 
@@ -177,22 +178,16 @@ class CpuModule : Module {
         }
 
         Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Refresh Interval", style = MaterialTheme.typography.bodyMedium)
-                Text("${interval.toInt()}ms", color = MaterialTheme.colorScheme.primary)
-            }
-            Slider(
+            SettingSlider(
+                label = "Update Interval",
                 value = interval,
                 onValueChange = { 
                     interval = it
                     Prefs.setInt(ctx, "cpu_interval", it.toInt())
                 },
                 valueRange = 1000f..10000f,
-                steps = 8
+                steps = 8,
+                formatter = { "${it.toInt()}ms" }
             )
         }
     }

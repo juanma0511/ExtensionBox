@@ -1,34 +1,29 @@
 package com.extensionbox.app.modules
 
-import android.Manifest
-import android.app.NotificationManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.os.Build
-import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
-import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
-import java.util.Calendar
+import com.extensionbox.app.ui.components.SettingSlider
+import com.extensionbox.app.ui.components.SettingSwitch
 import java.util.LinkedHashMap
 import java.util.Locale
-import kotlin.math.abs
 
 class StepModule : Module, SensorEventListener {
 
     private var ctx: Context? = null
     private var sm: SensorManager? = null
     private var running = false
-    private var lastRaw = -1f
     private var dailySteps = 0L
-    private var sensorAvailable = true
-    private var permissionDenied = false
+    private var startSteps = -1L
 
     override fun key(): String = "steps"
     override fun name(): String = "Step Counter"
@@ -36,171 +31,154 @@ class StepModule : Module, SensorEventListener {
     override fun description(): String = "Steps and distance"
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running
-    override fun priority(): Int = 70
+    override fun priority(): Int = 90
 
-    override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "stp_interval", 10000) } ?: 10000
+    override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "stp_interval", 30000) } ?: 30000
 
     override fun start(ctx: Context, sys: SystemAccess) {
         this.ctx = ctx
         dailySteps = Prefs.getLong(ctx, "stp_today", 0)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED) {
-                permissionDenied = true
-                sensorAvailable = false
-                running = true
-                return
-            }
-        }
-
-        permissionDenied = false
         sm = ctx.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val s = sm?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
         if (s != null) {
             sm?.registerListener(this, s, SensorManager.SENSOR_DELAY_UI)
-            sensorAvailable = true
-        } else {
-            sensorAvailable = false
+            running = true
         }
-        running = true
     }
 
     override fun stop() {
-        if (sm != null) {
-            try {
-                sm?.unregisterListener(this)
-            } catch (ignored: Exception) {
-            }
-        }
+        sm?.unregisterListener(this)
         sm = null
         running = false
     }
 
     override fun tick() {
-        val c = ctx ?: return
-        if (permissionDenied && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (ContextCompat.checkSelfPermission(c, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED) {
-                permissionDenied = false
-                sm = c.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-                val s = sm?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-                if (s != null) {
-                    sm?.registerListener(this, s, SensorManager.SENSOR_DELAY_UI)
-                    sensorAvailable = true
-                } else {
-                    sensorAvailable = false
-                }
-            }
-        }
-
-        val today = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-        val lastDay = Prefs.getInt(c, "stp_last_day", -1)
-        if (lastDay != -1 && lastDay != today) {
-            Prefs.setLong(c, "stp_yesterday", dailySteps)
-            dailySteps = 0
-            lastRaw = -1f
-            Prefs.setLong(c, "stp_today", 0)
-            Prefs.setBool(c, "stp_goal_fired", false)
-        }
-        Prefs.setInt(c, "stp_last_day", today)
+        ctx?.let { dailySteps = Prefs.getLong(it, "stp_today", 0) }
     }
 
-    override fun onSensorChanged(e: SensorEvent) {
-        if (e.sensor.type != Sensor.TYPE_STEP_COUNTER) return
-        val cur = e.values[0]
-        if (lastRaw >= 0) {
-            val delta = cur - lastRaw
-            if (delta > 0 && delta < 5000) {
-                dailySteps += delta.toLong()
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type == Sensor.TYPE_STEP_COUNTER) {
+            val total = event.values[0].toLong()
+            if (startSteps < 0) {
+                // First event since start
+                startSteps = total
+                return
+            }
+            val delta = total - startSteps
+            if (delta > 0) {
+                dailySteps += delta
+                startSteps = total
                 ctx?.let { Prefs.setLong(it, "stp_today", dailySteps) }
             }
         }
-        lastRaw = cur
     }
 
-    override fun onAccuracyChanged(s: Sensor, a: Int) {}
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
-    override fun compact(): String = when {
-        permissionDenied -> "👣Perm"
-        !sensorAvailable -> "👣N/A"
-        else -> "👣${Fmt.number(dailySteps)}"
-    }
+    override fun compact(): String = "👣${Fmt.number(dailySteps)}"
 
     override fun detail(): String {
-        if (permissionDenied) return "👣 Permission needed (ACTIVITY_RECOGNITION)"
-        if (!sensorAvailable) return "👣 Step sensor not available"
-
         val sb = StringBuilder()
-        val c = ctx ?: return "👣 No data"
-        val goal = Prefs.getInt(c, "stp_goal", 10000)
-        val strideCm = Prefs.getInt(c, "stp_stride_cm", 75)
-        val km = dailySteps * strideCm / 100000.0
-
-        if (goal > 0 && Prefs.getBool(c, "stp_show_goal", true)) {
-            val pct = dailySteps * 100f / goal
-            sb.append("👣 Steps: ${Fmt.number(dailySteps)} / ${Fmt.number(goal.toLong())} (${String.format(Locale.US, "%.0f%%", pct)})\n")
-        } else {
-            sb.append("👣 Steps: ${Fmt.number(dailySteps)}\n")
+        val c = ctx
+        val goal = if (c != null) Prefs.getInt(c, "stp_goal", 10000) else 10000
+        val pct = dailySteps * 100f / goal
+        
+        sb.append("👣 Steps: ${Fmt.number(dailySteps)} / ${Fmt.number(goal.toLong())} (${String.format(Locale.US, "%.0f%%", pct)})\n")
+        
+        if (c != null && Prefs.getBool(c, "stp_show_distance", true)) {
+            val stride = Prefs.getInt(c, "stp_stride_cm", 75)
+            val distKm = dailySteps * stride / 100000f
+            sb.append("   Distance: ${String.format(Locale.US, "%.2f km", distKm)}\n")
         }
 
-        if (Prefs.getBool(c, "stp_show_distance", true)) {
-            sb.append("   Distance: ${String.format(Locale.US, "%.1f km", km)}")
-        }
-
-        if (Prefs.getBool(c, "stp_show_yesterday", true)) {
+        if (c != null && Prefs.getBool(c, "stp_show_yesterday", true)) {
             val y = Prefs.getLong(c, "stp_yesterday", 0)
-            if (y > 0) {
-                val diff = dailySteps - y
-                val cmp = if (diff <= 0) "↓${Fmt.number(abs(diff))}" else "↑${Fmt.number(diff)}"
-                sb.append("\n   Yesterday: ${Fmt.number(y)} ($cmp)")
-            }
+            if (y > 0) sb.append("   Yesterday: ${Fmt.number(y)}")
         }
-        return sb.toString()
+        return sb.toString().trim()
     }
 
     override fun dataPoints(): LinkedHashMap<String, String> {
         val d = LinkedHashMap<String, String>()
-        if (permissionDenied) {
-            d["steps.status"] = "Permission needed"
-            return d
-        }
-        if (!sensorAvailable) {
-            d["steps.status"] = "Sensor not available"
-            return d
-        }
-        val c = ctx ?: return d
-        val strideCm = Prefs.getInt(c, "stp_stride_cm", 75)
-        val km = dailySteps * strideCm / 100000.0
         d["steps.today"] = Fmt.number(dailySteps)
-        d["steps.distance"] = String.format(Locale.US, "%.1f km", km)
-        val goal = Prefs.getInt(c, "stp_goal", 10000)
-        if (goal > 0) d["steps.goal"] = Fmt.number(goal.toLong())
-        val y = Prefs.getLong(c, "stp_yesterday", 0)
-        if (y > 0) {
-            d["steps.yesterday"] = Fmt.number(y)
-            val diff = dailySteps - y
-            d["steps.vs_yesterday"] = if (diff <= 0) "↓${Fmt.number(abs(diff))}" else "↑${Fmt.number(diff)}"
-        }
+        d["steps.yesterday"] = (ctx?.let { Prefs.getLong(it, "stp_yesterday", 0) } ?: 0).toString()
         return d
     }
 
-    override fun checkAlerts(ctx: Context) {
-        if (permissionDenied || !sensorAvailable) return
-        val goal = Prefs.getInt(ctx, "stp_goal", 10000)
-        if (goal <= 0) return
-        val fired = Prefs.getBool(ctx, "stp_goal_fired", false)
-        if (dailySteps >= goal.toLong() && !fired) {
-            try {
-                val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                nm.notify(2008, NotificationCompat.Builder(ctx, "ebox_alerts")
-                    .setSmallIcon(R.drawable.ic_notif)
-                    .setContentTitle("🎉 Step Goal Reached!")
-                    .setContentText("${Fmt.number(dailySteps)} steps today!")
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setAutoCancel(true).build())
-            } catch (ignored: Exception) {
-            }
-            vibrate(ctx, longArrayOf(0, 150, 50, 150, 50, 300)) // Triple celebratory pulse
-            Prefs.setBool(ctx, "stp_goal_fired", true)
+    @androidx.compose.runtime.Composable
+    override fun settingsContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+        var interval by remember { mutableStateOf(Prefs.getInt(ctx, "stp_interval", 30000).toFloat()) }
+        
+        Column {
+            SettingSlider(
+                label = "Update Interval",
+                value = interval,
+                onValueChange = {
+                    interval = it
+                    Prefs.setInt(ctx, "stp_interval", it.toInt())
+                },
+                valueRange = 5000f..300000f,
+                formatter = { if (it >= 60000f) "${it.toInt() / 60000}m" else "${it.toInt() / 1000}s" }
+            )
+
+            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            var goal by remember { mutableStateOf(Prefs.getInt(ctx, "stp_goal", 10000).toFloat()) }
+            SettingSlider(
+                label = "Daily Goal",
+                value = goal,
+                valueRange = 0f..30000f,
+                onValueChange = {
+                    goal = it
+                    Prefs.setInt(ctx, "stp_goal", it.toInt())
+                },
+                formatter = { if (it == 0f) "No Goal" else "${it.toInt()} steps" }
+            )
+            var stride by remember { mutableStateOf(Prefs.getInt(ctx, "stp_stride_cm", 75).toFloat()) }
+            SettingSlider(
+                label = "Step Length",
+                value = stride,
+                valueRange = 30f..120f,
+                onValueChange = {
+                    stride = it
+                    Prefs.setInt(ctx, "stp_stride_cm", it.toInt())
+                },
+                formatter = { "${it.toInt()} cm" }
+            )
+            var showDistance by remember { mutableStateOf(Prefs.getBool(ctx, "stp_show_distance", true)) }
+            SettingSwitch(
+                label = "Show Distance",
+                checked = showDistance,
+                onCheckedChange = {
+                    showDistance = it
+                    Prefs.setBool(ctx, "stp_show_distance", it)
+                }
+            )
+            var showGoal by remember { mutableStateOf(Prefs.getBool(ctx, "stp_show_goal", true)) }
+            SettingSwitch(
+                label = "Show Goal",
+                checked = showGoal,
+                onCheckedChange = {
+                    showGoal = it
+                    Prefs.setBool(ctx, "stp_show_goal", it)
+                }
+            )
+            var showYesterday by remember { mutableStateOf(Prefs.getBool(ctx, "stp_show_yesterday", true)) }
+            SettingSwitch(
+                label = "Show Yesterday",
+                checked = showYesterday,
+                onCheckedChange = {
+                    showYesterday = it
+                    Prefs.setBool(ctx, "stp_show_yesterday", it)
+                }
+            )
         }
+    }
+
+    override fun checkAlerts(ctx: Context) {}
+
+    override fun reset() {
+        dailySteps = 0
+        ctx?.let { Prefs.setLong(it, "stp_today", 0) }
     }
 }

@@ -14,6 +14,8 @@ import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
 import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
+import com.extensionbox.app.ui.components.SettingSlider
+import com.extensionbox.app.ui.components.SettingSwitch
 import java.util.LinkedHashMap
 
 class RamModule : Module {
@@ -97,19 +99,27 @@ class RamModule : Module {
 
     @androidx.compose.runtime.Composable
     override fun composableContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
-        androidx.compose.material3.Text(
-            "Top 5 Processes",
-            style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
-            color = androidx.compose.material3.MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (topProcs.isEmpty()) {
+            androidx.compose.material3.Text(
+                "No process data available",
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            return
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(modifier = androidx.compose.ui.Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                androidx.compose.material3.Text("PROCESS", style = androidx.compose.material3.MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = androidx.compose.ui.Modifier.weight(1f))
+                androidx.compose.material3.Text("CPU", style = androidx.compose.material3.MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = androidx.compose.ui.Modifier.width(40.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                androidx.compose.material3.Text("RAM", style = androidx.compose.material3.MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = androidx.compose.ui.Modifier.width(40.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+            }
+            
             topProcs.take(5).forEach { (name, cpu, mem) ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    androidx.compose.material3.Text(name.take(15), style = androidx.compose.material3.MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                    androidx.compose.material3.Text(cpu, style = androidx.compose.material3.MaterialTheme.typography.labelSmall, color = androidx.compose.material3.MaterialTheme.colorScheme.secondary)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    androidx.compose.material3.Text(mem, style = androidx.compose.material3.MaterialTheme.typography.labelSmall, color = androidx.compose.material3.MaterialTheme.colorScheme.tertiary)
+                Row(modifier = androidx.compose.ui.Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    androidx.compose.material3.Text(name, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, modifier = androidx.compose.ui.Modifier.weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    androidx.compose.material3.Text(cpu, style = androidx.compose.material3.MaterialTheme.typography.labelSmall, color = androidx.compose.material3.MaterialTheme.colorScheme.secondary, modifier = androidx.compose.ui.Modifier.width(40.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                    androidx.compose.material3.Text(mem, style = androidx.compose.material3.MaterialTheme.typography.labelSmall, color = androidx.compose.material3.MaterialTheme.colorScheme.tertiary, modifier = androidx.compose.ui.Modifier.width(40.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
                 }
             }
         }
@@ -120,46 +130,44 @@ class RamModule : Module {
         var interval by remember { 
             mutableStateOf(Prefs.getInt(ctx, "ram_interval", 5000).toFloat()) 
         }
-        var alertOn by remember { 
-            mutableStateOf(Prefs.getBool(ctx, "cpu_ram_alert", false)) 
-        }
-
+        
         Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Refresh Interval", style = MaterialTheme.typography.bodyMedium)
-                Text("${interval.toInt()}ms", color = MaterialTheme.colorScheme.primary)
-            }
-            Slider(
+            SettingSlider(
+                label = "Update Interval",
                 value = interval,
-                onValueChange = { 
+                valueRange = 1000f..60000f,
+                onValueChange = {
                     interval = it
                     Prefs.setInt(ctx, "ram_interval", it.toInt())
                 },
-                valueRange = 1000f..10000f,
-                steps = 8
+                formatter = { "${it.toInt() / 1000}s" }
             )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text("RAM Usage Alert", style = MaterialTheme.typography.bodyMedium)
-                    Text("Notify when usage is high", style = MaterialTheme.typography.labelSmall)
+            var alertOn by remember { 
+                mutableStateOf(Prefs.getBool(ctx, "cpu_ram_alert", false)) 
+            }
+            SettingSwitch(
+                label = "High RAM Alert",
+                checked = alertOn,
+                onCheckedChange = {
+                    alertOn = it
+                    Prefs.setBool(ctx, "cpu_ram_alert", it)
                 }
-                Switch(
-                    checked = alertOn,
-                    onCheckedChange = {
-                        alertOn = it
-                        Prefs.setBool(ctx, "cpu_ram_alert", it)
-                    }
+            )
+            
+            if (alertOn) {
+                var ramThresh by remember { mutableStateOf(Prefs.getInt(ctx, "cpu_ram_thresh", 90).toFloat()) }
+                SettingSlider(
+                    label = "RAM Alert Threshold",
+                    value = ramThresh,
+                    valueRange = 50f..98f,
+                    onValueChange = {
+                        ramThresh = it
+                        Prefs.setInt(ctx, "cpu_ram_thresh", it.toInt())
+                    },
+                    formatter = { "${it.toInt()}%" }
                 )
             }
         }

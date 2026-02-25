@@ -5,23 +5,25 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationCompat
 import com.extensionbox.app.Prefs
 import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
-import java.util.Calendar
+import com.extensionbox.app.ui.components.SettingSlider
+import com.extensionbox.app.ui.components.SettingSwitch
 import java.util.LinkedHashMap
-import java.util.Locale
-import kotlin.math.abs
-import kotlin.math.max
 
 class UnlockModule : Module {
 
     private var ctx: Context? = null
     private var rcv: BroadcastReceiver? = null
     private var running = false
-    private var count = 0
-    private var lastUnlockTime: Long = 0
+    private var dailyUnlocks = 0
+    private var lastUnlockTime = 0L
 
     override fun key(): String = "unlock"
     override fun name(): String = "Unlock Counter"
@@ -35,16 +37,16 @@ class UnlockModule : Module {
 
     override fun start(ctx: Context, sys: SystemAccess) {
         this.ctx = ctx
-        count = Prefs.getInt(ctx, "ulk_today", 0)
-
+        dailyUnlocks = Prefs.getInt(ctx, "ulk_today", 0)
+        
         rcv = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                if (Intent.ACTION_USER_PRESENT == intent.action) {
+                if (intent.action == Intent.ACTION_USER_PRESENT) {
                     val now = System.currentTimeMillis()
-                    val debounceMs = Prefs.getInt(ctx, "ulk_debounce", 5000)
-                    if (now - lastUnlockTime >= debounceMs) {
-                        count++
-                        Prefs.setInt(ctx, "ulk_today", count)
+                    val debounce = Prefs.getInt(ctx, "ulk_debounce", 5000)
+                    if (now - lastUnlockTime > debounce) {
+                        dailyUnlocks++
+                        Prefs.setInt(ctx, "ulk_today", dailyUnlocks)
                         lastUnlockTime = now
                     }
                 }
@@ -66,94 +68,107 @@ class UnlockModule : Module {
     }
 
     override fun tick() {
-        val c = ctx ?: return
-        count = Prefs.getInt(c, "ulk_today", 0)
-        checkDayRollover()
+        ctx?.let { dailyUnlocks = Prefs.getInt(it, "ulk_today", 0) }
     }
 
-    private fun checkDayRollover() {
-        val c = ctx ?: return
-        val today = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-        val lastDay = Prefs.getInt(c, "ulk_last_day", -1)
-
-        if (lastDay != -1 && lastDay != today) {
-            Prefs.setInt(c, "ulk_yesterday", count)
-            Prefs.setInt(c, "ulk_today", 0)
-            Prefs.setBool(c, "ulk_alert_fired", false)
-            count = 0
-        }
-        Prefs.setInt(c, "ulk_last_day", today)
-    }
-
-    override fun compact(): String = "🔓$count"
+    override fun compact(): String = "🔓$dailyUnlocks"
 
     override fun detail(): String {
-        val c = ctx ?: return "🔓 No data"
-        val yesterday = Prefs.getInt(c, "ulk_yesterday", 0)
-        val limit = Prefs.getInt(c, "ulk_daily_limit", 0)
-
-        val sb = StringBuilder()
-        sb.append("🔓 Unlocked: $count times today")
-
-        val cal = Calendar.getInstance()
-        val hoursSinceMidnight = cal.get(Calendar.HOUR_OF_DAY) + cal.get(Calendar.MINUTE) / 60f
-        if (hoursSinceMidnight > 0.1f) {
-            val rate = count / hoursSinceMidnight
-            sb.append(String.format(Locale.US, " (%.1f/h)", rate))
+        val y = ctx?.let { Prefs.getInt(it, "ulk_yesterday", 0) } ?: 0
+        var s = "🔓 Today: $dailyUnlocks unlocks"
+        if (y > 0) {
+            val diff = dailyUnlocks - y
+            val pct = if (y > 0) kotlin.math.abs(diff * 100 / y) else 0
+            val cmp = if (diff <= 0) "↓$pct% less than yesterday!" else "↑$pct% more than yesterday"
+            s += "\n   $cmp"
         }
-
-        if (yesterday > 0) {
-            val diff = count - yesterday
-            val cmp = if (diff <= 0) "↓${abs(diff)} 🎉" else "↑$diff"
-            sb.append("\n   Yesterday: $yesterday ($cmp)")
-        }
-
-        if (limit > 0) {
-            val rem = max(0, limit - count)
-            sb.append("\n   Limit: $limit ($rem remaining)")
-        }
-
-        return sb.toString()
+        return s
     }
 
     override fun dataPoints(): LinkedHashMap<String, String> {
         val d = LinkedHashMap<String, String>()
-        d["unlock.today"] = count.toString()
-
-        ctx?.let { c ->
-            val yesterday = Prefs.getInt(c, "ulk_yesterday", 0)
-            d["unlock.yesterday"] = yesterday.toString()
-            if (yesterday > 0) {
-                val diff = count - yesterday
-                d["unlock.vs_yesterday"] = if (diff <= 0) "↓${abs(diff)} 🎉" else "↑$diff"
-            }
-            val limit = Prefs.getInt(c, "ulk_daily_limit", 0)
-            d["unlock.limit"] = if (limit > 0) limit.toString() else "Off"
-            if (limit > 0) {
-                d["unlock.remaining"] = max(0, limit - count).toString()
-            }
-        }
+        d["unlock.today"] = dailyUnlocks.toString()
+        d["unlock.yesterday"] = (ctx?.let { Prefs.getInt(it, "ulk_yesterday", 0) } ?: 0).toString()
         return d
+    }
+
+    @androidx.compose.runtime.Composable
+    override fun settingsContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+        var interval by remember { mutableStateOf(Prefs.getInt(ctx, "ulk_interval", 10000).toFloat()) }
+        
+        Column {
+            SettingSlider(
+                label = "Update Interval",
+                value = interval,
+                onValueChange = {
+                    interval = it
+                    Prefs.setInt(ctx, "ulk_interval", it.toInt())
+                },
+                valueRange = 1000f..60000f,
+                formatter = { "${it.toInt() / 1000}s" }
+            )
+
+            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            var ulLimit by remember { mutableStateOf(Prefs.getInt(ctx, "ulk_daily_limit", 0).toFloat()) }
+            SettingSlider(
+                label = "Daily Unlock Limit",
+                value = ulLimit,
+                valueRange = 0f..200f,
+                onValueChange = {
+                    ulLimit = it
+                    Prefs.setInt(ctx, "ulk_daily_limit", it.toInt())
+                },
+                formatter = { if (it == 0f) "No Limit" else "${it.toInt()} times" }
+            )
+            if (ulLimit > 0) {
+                var limitAlert by remember { mutableStateOf(Prefs.getBool(ctx, "ulk_limit_alert", true)) }
+                SettingSwitch(
+                    label = "Alert on Limit",
+                    checked = limitAlert,
+                    onCheckedChange = {
+                        limitAlert = it
+                        Prefs.setBool(ctx, "ulk_limit_alert", it)
+                    }
+                )
+            }
+            var debounce by remember { mutableStateOf(Prefs.getInt(ctx, "ulk_debounce", 5000).toFloat()) }
+            SettingSlider(
+                label = "Debounce",
+                value = debounce,
+                valueRange = 0f..30000f,
+                onValueChange = {
+                    debounce = it
+                    Prefs.setInt(ctx, "ulk_debounce", it.toInt())
+                },
+                formatter = { "${it.toInt()} ms" }
+            )
+        }
     }
 
     override fun checkAlerts(ctx: Context) {
         val limit = Prefs.getInt(ctx, "ulk_daily_limit", 0)
-        val alertEnabled = Prefs.getBool(ctx, "ulk_limit_alert", true)
-        val alertFired = Prefs.getBool(ctx, "ulk_alert_fired", false)
-
-        if (limit > 0 && alertEnabled && count >= limit && !alertFired) {
-            try {
-                val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                val b = NotificationCompat.Builder(ctx, "ebox_alerts")
-                    .setSmallIcon(R.drawable.ic_notif)
-                    .setContentTitle("🔴 Unlock Limit Reached")
-                    .setContentText("You've unlocked $count times. Limit: $limit. Take a break!")
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setAutoCancel(true)
-                nm.notify(2006, b.build())
-            } catch (ignored: Exception) {
+        if (limit > 0 && dailyUnlocks >= limit) {
+            val alertOn = Prefs.getBool(ctx, "ulk_limit_alert", true)
+            val fired = Prefs.getBool(ctx, "ulk_limit_fired", false)
+            if (alertOn && !fired) {
+                try {
+                    val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    nm.notify(2006, NotificationCompat.Builder(ctx, "ebox_alerts")
+                        .setSmallIcon(R.drawable.ic_notif)
+                        .setContentTitle("📵 Unlock Limit Reached")
+                        .setContentText("You've unlocked your phone $dailyUnlocks times today.")
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true).build())
+                } catch (ignored: Exception) {
+                }
+                Prefs.setBool(ctx, "ulk_limit_fired", true)
             }
-            Prefs.setBool(ctx, "ulk_alert_fired", true)
         }
+    }
+
+    override fun reset() {
+        dailyUnlocks = 0
+        ctx?.let { Prefs.setInt(it, "ulk_today", 0) }
     }
 }

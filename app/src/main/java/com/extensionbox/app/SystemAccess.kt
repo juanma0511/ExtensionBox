@@ -509,36 +509,49 @@ class SystemAccess(ctx: Context) {
     private fun parseTopProcesses(output: String): List<Triple<String, String, String>> {
         val list = mutableListOf<Triple<String, String, String>>()
         try {
-            var foundHeader = false
+            var cpuIdx = -1
+            var memIdx = -1
+            var nameIdx = -1
+            
             output.lines().forEach { line ->
                 val l = line.trim()
-                if (l.contains("PID") && l.contains("NAME")) {
-                    foundHeader = true
+                if (l.contains("PID") && (l.contains("NAME") || l.contains("CMD") || l.contains("COMMAND"))) {
+                    val cols = l.split(Regex("\\s+"))
+                    cpuIdx = cols.indexOfFirst { it.contains("CPU") }
+                    memIdx = cols.indexOfFirst { it.contains("MEM") }
+                    nameIdx = cols.indexOfFirst { it.contains("NAME") || it.contains("CMD") || it.contains("COMMAND") }
                     return@forEach
                 }
-                if (foundHeader && l.isNotEmpty()) {
+                
+                if (cpuIdx != -1 && l.isNotEmpty()) {
                     val parts = l.split(Regex("\\s+"))
-                    if (parts.size >= 12) {
-                        // Standard top output: PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ NAME
-                        val cpu = parts[8] + "%"
-                        val mem = parts[9] + "%"
-                        val name = parts[11]
-                        if (name != "top") {
-                            list.add(Triple(name, cpu, mem))
-                        }
-                    } else if (parts.size >= 9) {
-                        // Some versions have different columns
-                        val cpu = parts[parts.size - 4] + "%"
-                        val mem = parts[parts.size - 3] + "%"
-                        val name = parts.last()
-                        if (name != "top") {
+                    if (parts.size > nameIdx && parts.size > cpuIdx) {
+                        val cpu = parts[cpuIdx].removeSuffix("%") + "%"
+                        val mem = if (memIdx != -1 && memIdx < parts.size) parts[memIdx].removeSuffix("%") + "%" else "?"
+                        val name = parts[nameIdx].substringAfterLast('/')
+                        if (name != "top" && name != "sh" && name != "su") {
                             list.add(Triple(name, cpu, mem))
                         }
                     }
                 }
             }
+            
+            // If header parsing failed, try a best-effort positional approach
+            if (list.isEmpty()) {
+                output.lines().forEach { line ->
+                    val parts = line.trim().split(Regex("\\s+"))
+                    if (parts.size >= 9 && parts[0].toIntOrNull() != null) {
+                        // Assuming CPU is around index 8 or 9
+                        val cpu = parts.find { it.contains("%") } ?: parts.getOrNull(8) ?: ""
+                        val name = parts.last().substringAfterLast('/')
+                        if (name.isNotEmpty() && name != "top") {
+                            list.add(Triple(name, cpu, ""))
+                        }
+                    }
+                }
+            }
         } catch (ignored: Exception) {}
-        return list.take(10)
+        return list.filter { it.first.isNotEmpty() }.take(10)
     }
 
     fun getCpuCoreCount(): Int {
