@@ -48,6 +48,8 @@ class MonitorService : Service() {
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
     private var tickerJob: Job? = null
+    private var syncJob: Job? = null
+    private val moduleStates = ConcurrentHashMap<String, Boolean>()
 
     private val screenReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
@@ -104,11 +106,34 @@ class MonitorService : Service() {
             )
             
             initialized = true
-            syncModules()
+            startPreferenceObservation()
             startTicker()
         }
         
         Prefs.setRunning(this, true)
+    }
+
+    private fun startPreferenceObservation() {
+        syncJob?.cancel()
+        syncJob = serviceScope.launch(Dispatchers.IO) {
+            this@MonitorService.dataStore.data.collect { prefs ->
+                for (m in modules) {
+                    val key = "m_${m.key()}_enabled"
+                    val prefKey = androidx.datastore.preferences.core.booleanPreferencesKey(key)
+                    val isEnabled = prefs[prefKey] ?: m.defaultEnabled()
+                    moduleStates[m.key()] = isEnabled
+                    
+                    if (isEnabled && !m.alive()) {
+                        m.start(this@MonitorService, sysAccess)
+                        lastTickTime[m.key()] = 0L
+                    } else if (!isEnabled && m.alive()) {
+                        m.stop()
+                        moduleData.remove(m.key())
+                        lastTickTime.remove(m.key())
+                    }
+                }
+            }
+        }
     }
 
     private fun startTicker() {
@@ -165,6 +190,7 @@ class MonitorService : Service() {
 
     override fun onDestroy() {
         tickerJob?.cancel()
+        syncJob?.cancel()
         serviceJob.cancel()
         try {
             unregisterReceiver(screenReceiver)
@@ -188,45 +214,40 @@ class MonitorService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private suspend fun syncModules() = withContext(Dispatchers.IO) {
-        if (!initialized) return@withContext
-        for (m in modules) {
-            val shouldRun = Prefs.isModuleEnabled(this@MonitorService, m.key(), m.defaultEnabled())
-            if (shouldRun && !m.alive()) {
-                m.start(this@MonitorService, sysAccess)
-                lastTickTime[m.key()] = 0L
-            } else if (!shouldRun && m.alive()) {
-                m.stop()
-                moduleData.remove(m.key())
-                lastTickTime.remove(m.key())
-            }
-        }
-    }
-
     private suspend fun doTickCycle() = withContext(Dispatchers.IO) {
         if (!initialized) return@withContext
         checkRollover()
         checkBatteryFullReset()
-        syncModules()
         val now = SystemClock.elapsedRealtime()
         var changed = false
+        val entitiesToInsert = mutableListOf<ModuleDataEntity>()
 
         for (m in modules) {
-            if (!m.alive()) continue
+            val isEnabled = moduleStates[m.key()] ?: m.defaultEnabled()
+            if (!isEnabled || !m.alive()) continue
+            
             val last = lastTickTime[m.key()] ?: 0L
-            val interval = if (isScreenOn) m.tickIntervalMs() else m.tickIntervalMs() * 3 // Slow down 3x when screen off
+            val interval = if (isScreenOn) m.tickIntervalMs() else m.tickIntervalMs() * 3
             if (now - last >= interval) {
-                m.tick()
-                m.checkAlerts(this@MonitorService)
-                lastTickTime[m.key()] = now
-                val dp = m.dataPoints()
-                moduleData[m.key()] = dp
-                
-                // Save to database
-                database.moduleDataDao().insert(ModuleDataEntity(moduleKey = m.key(), data = dp))
-                
-                changed = true
+                try {
+                    m.tick()
+                    m.checkAlerts(this@MonitorService)
+                    lastTickTime[m.key()] = now
+                    val dp = m.dataPoints()
+                    moduleData[m.key()] = dp
+                    
+                    // Collect for batch insert
+                    entitiesToInsert.add(ModuleDataEntity(moduleKey = m.key(), data = dp))
+                    
+                    changed = true
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
+        }
+
+        if (entitiesToInsert.isNotEmpty()) {
+            database.moduleDataDao().insertAll(entitiesToInsert)
         }
         
         val notifInterval = Prefs.getLong(this@MonitorService, "notif_refresh_ms", 10000L)
@@ -235,9 +256,13 @@ class MonitorService : Service() {
             withContext(Dispatchers.Main) {
                 updateNotification()
             }
-            try {
-                ModuleWidgetProvider.updateAllWidgets(this@MonitorService)
-            } catch (ignored: Exception) {
+            // Throttled widget update (e.g. at least 30s)
+            val lastWidgetUpdate = Prefs.getLong(this@MonitorService, "last_widget_update_time", 0L)
+            if (now - lastWidgetUpdate >= 30000L) {
+                Prefs.setLong(this@MonitorService, "last_widget_update_time", now)
+                try {
+                    ModuleWidgetProvider.updateAllWidgets(this@MonitorService)
+                } catch (ignored: Exception) {}
             }
         }
         checkNightSummary()

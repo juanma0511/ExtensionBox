@@ -7,3 +7,4 @@ _icon/
 .env
 *.jks
 *.keystore
+keystore_base64.txt

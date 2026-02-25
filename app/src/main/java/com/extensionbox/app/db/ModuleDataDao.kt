@@ -8,6 +8,9 @@ interface ModuleDataDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(data: ModuleDataEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(data: List<ModuleDataEntity>)
+
     @Query("SELECT * FROM module_data WHERE moduleKey = :key ORDER BY timestamp DESC LIMIT 1")
     suspend fun getLatest(key: String): ModuleDataEntity?
 
