@@ -278,4 +278,65 @@
     <string name="thermal">Thermal</string>
     <string name="details">Details</string>
     <string name="elevation">elevation</string>
+    <string name="settings_exported">Settings exported</string>
+    <string name="export_failed">Export failed</string>
+    <string name="settings_imported">Settings imported</string>
+    <string name="import_failed">Import failed</string>
+    <string name="permissions">Permissions</string>
+    <string name="checking_system_access">Checking system access...</string>
+    <string name="system_access_title" translatable="false">System_Access</string>
+    <string name="system_access_summary">Status: %1$s\nTap to refresh</string>
+    <string name="refresh">Refresh</string>
+    <string name="shizuku_service">Shizuku Service</string>
+    <string name="service_is_active">Service is active</string>
+    <string name="service_not_found">Service not found</string>
+    <string name="shizuku_not_found">Shizuku not found</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="allow_system_file_access_via_shizuku">Allow system file access via Shizuku</string>
+    <string name="battery_optimization">Battery Optimization</string>
+    <string name="allow_background_monitoring">Allow background monitoring</string>
+    <string name="notification">Notification</string>
+    <string name="refresh_rate">Refresh Rate</string>
+    <string name="refresh_rate_value">%1$ds</string>
+    <string name="dismissible">Dismissible</string>
+    <string name="allow_swiping_away_to_stop_service">Allow swiping away to stop service</string>
+    <string name="layout_style">Layout Style</string>
+    <string name="list" translatable="false">LIST</string>
+    <string name="grid" translatable="false">GRID</string>
+    <string name="compact" translatable="false">COMPACT</string>
+    <string name="visible_modules">Visible Modules</string>
+    <string name="choose_which_stats_appear_in_notification">Choose which stats appear in notification</string>
+    <string name="appearance">Appearance</string>
+    <string name="app_theme">App Theme</string>
+    <string name="dynamic_color">Dynamic Color</string>
+    <string name="use_system_wallpaper_colors">Use system wallpaper colors</string>
+    <string name="expandable_cards">Expandable Cards</string>
+    <string name="show_expansion_toggle_on_dashboard">Show expansion toggle on dashboard</string>
+    <string name="monitoring">Monitoring</string>
+    <string name="reset_on_full_charge">Reset on Full Charge</string>
+    <string name="clear_stats_when_battery_reaches_100">Clear stats when battery reaches 100%</string>
+    <string name="reset_on_reboot">Reset on Reboot</string>
+    <string name="clear_stats_after_system_restart">Clear stats after system restart</string>
+    <string name="context_aware">Context Aware</string>
+    <string name="dynamic_titles_based_on_battery">Dynamic titles based on battery</string>
+    <string name="compact_style">Compact Style</string>
+    <string name="simplified_list_in_notification">Simplified list in notification</string>
+    <string name="notification_items">Notification Items: %1$d</string>
+    <string name="data_backup">Data &amp; Backup</string>
+    <string name="data_retention">Data Retention</string>
+    <string name="data_retention_days">%1$d Days</string>
+    <string name="history_older_than_this_will_be_deleted_daily">History older than this will be deleted daily.</string>
+    <string name="export_settings">Export Settings</string>
+    <string name="save_config_to_json">Save config to JSON</string>
+    <string name="import_settings">Import Settings</string>
+    <string name="restore_from_json">Restore from JSON</string>
+    <string name="reset_all_data">Reset All Data</string>
+    <string name="clear_all_stats_and_preferences">Clear all stats and preferences</string>
+    <string name="data_cleared">Data cleared</string>
+    <string name="history_15m">History (15m)</string>
+    <string name="real_time_metrics">Real-time Metrics</string>
+    <string name="extension_settings">Extension Settings</string>
+    <string name="log_action">Log Action</string>
+    <string name="extensionbox_config_json" translatable="false">extensionbox_config.json</string>
+    <string name="application_json" translatable="false">application/json</string>
 </resources>

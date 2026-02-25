@@ -15,10 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.extensionbox.app.MonitorService
 import com.extensionbox.app.Prefs
+import com.extensionbox.app.R
 import com.extensionbox.app.ui.ModuleRegistry
 import com.extensionbox.app.ui.components.*
 import com.extensionbox.app.ui.viewmodel.DashboardViewModel
@@ -58,7 +60,7 @@ fun ModuleDetailScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Timeline, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(8.dp))
-                        Text("History (15m)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Text(stringResource(id = R.string.history_15m), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.height(16.dp))
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -85,7 +87,7 @@ fun ModuleDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Real-time Metrics",
+                        text = stringResource(id = R.string.real_time_metrics),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -120,7 +122,7 @@ fun ModuleDetailScreen(
                         Icon(Icons.Default.Settings, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "Extension Settings",
+                            text = stringResource(id = R.string.extension_settings),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -141,7 +143,7 @@ fun ModuleDetailScreen(
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Log Action")
+                            Text(stringResource(id = R.string.log_action))
                         }
                     }
                 }
