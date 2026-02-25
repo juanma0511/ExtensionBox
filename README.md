@@ -1,124 +1,86 @@
 # Extension Box
 
-Extension Box is a modular Android system monitoring application built around independently controlled extensions.
+[![License](https://img.shields.io/github/license/omersusin/ExtensionBox?style=flat-square&color=blue)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Android-green?style=flat-square&logo=android)](https://developer.android.com)
+[![Kotlin](https://img.shields.io/badge/Language-Kotlin-purple?style=flat-square&logo=kotlin)](https://kotlinlang.org)
+[![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-orange?style=flat-square&logo=jetpackcompose)](https://developer.android.com/compose)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/omersusin/ExtensionBox/build.yml?branch=development&style=flat-square&logo=github-actions)](https://github.com/omersusin/ExtensionBox/actions)
 
-The app runs a foreground monitoring service and displays live system data through a persistent notification and in-app dashboard cards.  
-Each module can be enabled or disabled individually.
-
-Disabled modules do not execute background logic.
-
----
-
-## Description
-
-Extension Box provides structured, modular system monitoring without unnecessary overhead.
-
-- Foreground service-based monitoring
-- Persistent notification (compact + expanded)
-- Modular architecture
-- Independent module lifecycle
-- No analytics or tracking
-- Open-source
+Extension Box is a modular system monitoring framework for Android, designed to provide high-fidelity hardware and software telemetry through an extensible architecture. The application leverages a foreground service model to ensure consistent data collection while maintaining a minimal resource footprint.
 
 ---
 
-## Core Architecture
+## Project Overview
 
-- Central `MonitorService` (Foreground Service)
-- Module registry system
-- Each module:
-  - Has its own key
-  - Has its own update interval
-  - Produces its own data block
-- Modules can be toggled on/off at runtime
-- Dashboard renders live module cards
+The primary objective of Extension Box is to offer a structured environment where system monitoring capabilities are encapsulated into independent modules. This approach allows users to granularly control the lifecycle of each telemetry source, ensuring that background logic is only executed for active components.
 
 ---
 
-## Current Features
+## Key Features
 
-### 🔋 Battery
-- Current (mA)
-- Power (W)
-- Temperature
-- Health
-- Voltage (when available)
+### Power and Energy Management
+- Real-time current flow (mA) and power consumption (W)
+- Battery thermal monitoring and health diagnostic reporting
+- Detailed voltage telemetry and charging status analysis
 
-### 🧠 CPU & RAM
-- CPU usage
-- Memory usage
+### Computing Resources
+- Processor utilization metrics and load distribution
+- System memory allocation and availability tracking
+- Kernel uptime and boot duration analysis
 
-### 📱 Screen Time
-- Screen on time
-- Screen off time
-- Drain rates
+### Network and Connectivity
+- Real-time throughput monitoring for uplink and downlink
+- Traffic accounting with WiFi and cellular breakdown
+- Network interface identification and VPN state detection
+- Integrated periodic network performance testing
 
-### 😴 Deep Sleep
-- Awake ratio
-- Deep sleep ratio
-
-### 📶 Network Speed
-- Real-time download speed
-- Real-time upload speed
-
-### 📊 Data Usage
-- Daily usage
-- Monthly usage
-- WiFi & mobile breakdown
-
-### 🔓 Unlock Counter
-- Daily unlock count
-- Usage awareness tracking
-
-### 💾 Storage
-- Internal storage usage
-
-### 📡 Connection Info
-- WiFi state
-- Cellular state
-- VPN detection
-
-### 🕒 Uptime
-- Device uptime since boot
-
-### 👣 Step Counter
-- Step count
-- Distance (sensor-based)
-
-### 🏎 Speed Test
-- Manual or periodic network speed testing
-
-### 🍆 Fap Counter
-- Self-monitoring counter
-- Streak tracking
+### Human-Machine Interaction
+- Screen state accumulation (On/Off duration)
+- Device unlock frequency and usage pattern analysis
+- Physical activity tracking through hardware sensor integration
 
 ---
 
-## App Screens
+## Technical Architecture
 
-- Dashboard (live module cards)
-- Extensions (enable/disable modules)
-- Settings (monitor control & data reset)
-- About screen
+The application is built on a modern Android stack with a focus on modularity and reactive data flow.
 
----
-
-## CI / Release
-
-- GitHub Actions builds debug APK on push
-- Version tags (`v*`) generate release APK automatically
-- Signed release is optional (via repository secrets)
+- **Centralized Service:** A unified `MonitorService` manages the lifecycle of all active extensions.
+- **Module Registry:** A strictly typed registry system defines module capabilities, update frequencies, and data structures.
+- **Persistent Storage:** Local data persistence is handled via Room and DataStore for telemetry history and configuration.
+- **Reactive UI:** The dashboard is constructed using Jetpack Compose, featuring dynamic card rendering and real-time state synchronization.
+- **Enhanced Access:** Optional integration with Shizuku for privileged system file access and advanced diagnostics.
 
 ---
 
-## Requirements
+## Technology Stack
 
-- Android 8.0+
-- Required permissions vary depending on enabled modules
+- **UI Framework:** Jetpack Compose with Material Design 3
+- **Language:** Kotlin Coroutines and Flow
+- **Dependency Injection:** Manual injection optimized for modularity
+- **Database:** Room Persistence Library
+- **Networking:** Retrofit 3.0
+- **Build System:** Gradle Kotlin DSL
+
+---
+
+## CI / CD Integration
+
+The repository is integrated with GitHub Actions to automate the quality assurance and deployment pipeline:
+- **Continuous Integration:** Automatic debug builds are triggered on every push to verify code integrity.
+- **Automated Releases:** Tagged commits generate release-ready binaries automatically.
+- **Artifact Management:** Support for signed APK generation through repository secrets.
+
+---
+
+## System Requirements
+
+- **Minimum SDK:** API 26 (Android 8.0)
+- **Target SDK:** API 36
+- **Permissions:** Module-specific permissions are requested at runtime only when required.
 
 ---
 
 ## License
 
-MIT License
-
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
