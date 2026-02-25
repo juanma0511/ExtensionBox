@@ -137,6 +137,8 @@ class SystemAccess(ctx: Context) {
     private val cache = ConcurrentHashMap<String, Pair<String?, Long>>()
     private val CACHE_TTL = 1000L // 1 second
 
+    private val thermalMap = ConcurrentHashMap<String, String>()
+
     private fun shizukuAvailableNow(): Boolean {
         return try {
             Shizuku.pingBinder() && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
@@ -205,7 +207,140 @@ class SystemAccess(ctx: Context) {
         }
     }
 
-    // --- Hardware Specific Readers ---
+    // --- Dynamic Thermal Mapping ---
+
+    fun getThermalData(): Map<String, Float> {
+        if (thermalMap.isEmpty()) {
+            // Initial scan of thermal zones
+            val out = if (rootAvailable) shell.exec("ls /sys/class/thermal/thermal_zone*") else null
+            val zones = out?.split(Regex("\\s+"))?.filter { it.startsWith("/sys") } 
+                ?: (0..20).map { "/sys/class/thermal/thermal_zone$it" }
+
+            for (zone in zones) {
+                val type = readSysFile("$zone/type")
+                if (type != null) {
+                    thermalMap[zone] = type
+                }
+            }
+        }
+
+        val results = mutableMapOf<String, Float>()
+        thermalMap.forEach { (path, type) ->
+            readSysFile("$path/temp")?.let {
+                try {
+                    var t = it.toFloat()
+                    if (t > 1000) t /= 1000f
+                    if (t in -30f..150f) results[type] = t
+                } catch (_: Exception) {}
+            }
+        }
+        return results
+    }
+
+    // --- CPU Per-Core & GPU Monitoring ---
+
+    fun getCpuCoreFrequencies(): List<Long> {
+        val count = getCpuCoreCount()
+        val freqs = mutableListOf<Long>()
+        for (i in 0 until count) {
+            val f = readSysFile("/sys/devices/system/cpu/cpu$i/cpufreq/scaling_cur_freq")
+            freqs.add(f?.toLongOrNull() ?: 0L)
+        }
+        return freqs
+    }
+
+    fun getCpuGovernors(): List<String> {
+        val count = getCpuCoreCount()
+        val govs = mutableListOf<String>()
+        for (i in 0 until count) {
+            val g = readSysFile("/sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor")
+            govs.add(g ?: "unknown")
+        }
+        return govs
+    }
+
+    fun getGpuData(): Pair<Int, Long> {
+        // Qualcomm Adreno
+        val adrenoLoad = readSysFile("/sys/class/kgsl/kgsl-3d0/gpu_busy16") // Percentage string or raw
+        val adrenoFreq = readSysFile("/sys/class/kgsl/kgsl-3d0/gpuclk")
+        
+        if (adrenoLoad != null || adrenoFreq != null) {
+            val load = try {
+                if (adrenoLoad?.contains("%") == true) adrenoLoad.replace("%", "").trim().toInt()
+                else adrenoLoad?.trim()?.toInt() ?: 0
+            } catch (_: Exception) { 0 }
+            val freq = adrenoFreq?.toLongOrNull() ?: 0L
+            return Pair(load, freq)
+        }
+
+        // Mali
+        val maliUtil = readSysFile("/sys/class/misc/mali0/device/utilization")
+        if (maliUtil != null) {
+            val load = maliUtil.toIntOrNull() ?: 0
+            return Pair(load, 0L)
+        }
+
+        return Pair(-1, 0L)
+    }
+
+    // --- Battery Charge Control (Root Required) ---
+
+    fun setChargingEnabled(enabled: Boolean): Boolean {
+        if (!rootAvailable) return false
+        val value = if (enabled) "1" else "0"
+        val paths = arrayOf(
+            "/sys/class/power_supply/battery/charging_enabled",
+            "/sys/class/power_supply/battery/battery_charging_enabled",
+            "/sys/class/power_supply/battery/input_suspend" // Sometimes inverted
+        )
+        
+        for (path in paths) {
+            val cmd = "echo $value > $path"
+            shell.exec(cmd)
+            // Verify? Simple check: if we can read it back
+            if (readSysFile(path) == value) return true
+        }
+        return false
+    }
+
+    // --- Advanced Network & Disk I/O ---
+
+    fun getNetworkInterfaceStats(): Map<String, Pair<Long, Long>> {
+        val stats = mutableMapOf<String, Pair<Long, Long>>()
+        val content = readSysFile("/proc/net/dev") ?: return stats
+        content.lines().forEach { line ->
+            if (line.contains(":")) {
+                val parts = line.trim().split(Regex("\\s+"))
+                if (parts.size > 10) {
+                    val name = parts[0].replace(":", "")
+                    val rx = parts[1].toLongOrNull() ?: 0L
+                    val tx = parts[9].toLongOrNull() ?: 0L
+                    if (rx > 0 || tx > 0) stats[name] = Pair(rx, tx)
+                }
+            }
+        }
+        return stats
+    }
+
+    fun getDiskIoStats(): Map<String, Long> {
+        val stats = mutableMapOf<String, Long>()
+        val content = readSysFile("/proc/diskstats") ?: return stats
+        content.lines().forEach { line ->
+            val parts = line.trim().split(Regex("\\s+"))
+            if (parts.size >= 13) {
+                val name = parts[2]
+                if (name == "mmcblk0" || name == "sda" || name.startsWith("dm-")) {
+                    val readBytes = parts[5].toLongOrNull() ?: 0L // sectors read
+                    val writeBytes = parts[9].toLongOrNull() ?: 0L // sectors written
+                    stats["${name}_read"] = readBytes * 512
+                    stats["${name}_write"] = writeBytes * 512
+                }
+            }
+        }
+        return stats
+    }
+
+    // --- Existing Hardware Specific Readers ---
 
     fun readBatteryCurrentMa(ctx: Context): Int {
         if (isEnhanced()) {

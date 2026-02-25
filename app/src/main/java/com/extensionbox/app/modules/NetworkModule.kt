@@ -23,6 +23,11 @@ class NetworkModule : Module {
     private var prevDlSpeed = 0L
     private var prevUlSpeed = 0L
 
+    // Interface stats
+    private var interfaceStats = mapOf<String, Pair<Long, Long>>()
+    private var prevInterfaceStats = mapOf<String, Pair<Long, Long>>()
+    private var sys: SystemAccess? = null
+
     override fun key(): String = "network"
     override fun name(): String = "Network Speed"
     override fun emoji(): String = "📶"
@@ -35,6 +40,7 @@ class NetworkModule : Module {
 
     override fun start(ctx: Context, sys: SystemAccess) {
         this.ctx = ctx
+        this.sys = sys
         prevTime = SystemClock.elapsedRealtime()
 
         val rx = TrafficStats.getTotalRxBytes()
@@ -42,6 +48,10 @@ class NetworkModule : Module {
 
         prevRx = if (rx != TrafficStats.UNSUPPORTED.toLong()) rx else 0
         prevTx = if (tx != TrafficStats.UNSUPPORTED.toLong()) tx else 0
+        
+        if (sys.isEnhanced()) {
+            prevInterfaceStats = sys.getNetworkInterfaceStats()
+        }
 
         dlSpeed = 0
         ulSpeed = 0
@@ -54,51 +64,89 @@ class NetworkModule : Module {
         running = false
         dlSpeed = 0
         ulSpeed = 0
+        sys = null
     }
 
     override fun tick() {
-        val rx = TrafficStats.getTotalRxBytes()
-        val tx = TrafficStats.getTotalTxBytes()
-
-        if (rx == TrafficStats.UNSUPPORTED.toLong() || tx == TrafficStats.UNSUPPORTED.toLong()) {
-            dlSpeed = 0
-            ulSpeed = 0
-            return
-        }
-
         val now = SystemClock.elapsedRealtime()
         val dtMs = now - prevTime
+        if (dtMs <= 0) return
 
-        if (dtMs > 0) {
-            var rxDelta = rx - prevRx
-            var txDelta = tx - prevTx
-
-            if (rxDelta < 0) rxDelta = 0
-            if (txDelta < 0) txDelta = 0
-
-            val rawDl = rxDelta * 1000 / dtMs
-            val rawUl = txDelta * 1000 / dtMs
-
+        val s = sys
+        if (s != null && s.isEnhanced()) {
+            val currentStats = s.getNetworkInterfaceStats()
+            var totalDl = 0L
+            var totalUl = 0L
+            
+            currentStats.forEach { (iface, stats) ->
+                val prev = prevInterfaceStats[iface]
+                if (prev != null) {
+                    val dl = (stats.first - prev.first).coerceAtLeast(0)
+                    val ul = (stats.second - prev.second).coerceAtLeast(0)
+                    totalDl += dl
+                    totalUl += ul
+                }
+            }
+            
+            val rawDl = totalDl * 1000 / dtMs
+            val rawUl = totalUl * 1000 / dtMs
+            
             dlSpeed = (rawDl * 6 + prevDlSpeed * 4) / 10
             ulSpeed = (rawUl * 6 + prevUlSpeed * 4) / 10
+            
+            prevInterfaceStats = currentStats
+            interfaceStats = currentStats
+        } else {
+            val rx = TrafficStats.getTotalRxBytes()
+            val tx = TrafficStats.getTotalTxBytes()
 
-            prevDlSpeed = dlSpeed
-            prevUlSpeed = ulSpeed
+            if (rx != TrafficStats.UNSUPPORTED.toLong() && tx != TrafficStats.UNSUPPORTED.toLong()) {
+                var rxDelta = rx - prevRx
+                var txDelta = tx - prevTx
+
+                if (rxDelta < 0) rxDelta = 0
+                if (txDelta < 0) txDelta = 0
+
+                val rawDl = rxDelta * 1000 / dtMs
+                val rawUl = txDelta * 1000 / dtMs
+
+                dlSpeed = (rawDl * 6 + prevDlSpeed * 4) / 10
+                ulSpeed = (rawUl * 6 + prevUlSpeed * 4) / 10
+
+                prevRx = rx
+                prevTx = tx
+            }
         }
 
-        prevRx = rx
-        prevTx = tx
+        prevDlSpeed = dlSpeed
+        prevUlSpeed = ulSpeed
         prevTime = now
     }
 
     override fun compact(): String = "↓${Fmt.speed(dlSpeed)} ↑${Fmt.speed(ulSpeed)}"
 
-    override fun detail(): String = "📶 Download: ${Fmt.speed(dlSpeed)}\n   Upload: ${Fmt.speed(ulSpeed)}"
+    override fun detail(): String {
+        val sb = StringBuilder()
+        sb.append("📶 Download: ${Fmt.speed(dlSpeed)}\n   Upload: ${Fmt.speed(ulSpeed)}\n")
+        if (interfaceStats.isNotEmpty()) {
+            sb.append("   Interfaces:\n")
+            interfaceStats.forEach { (name, _) ->
+                if (name != "lo") {
+                    sb.append("   • $name\n")
+                }
+            }
+        }
+        return sb.toString().trim()
+    }
 
     override fun dataPoints(): LinkedHashMap<String, String> {
         val d = LinkedHashMap<String, String>()
         d["net.download"] = Fmt.speed(dlSpeed)
         d["net.upload"] = Fmt.speed(ulSpeed)
+        interfaceStats.forEach { (name, stats) ->
+            d["net.iface.$name.rx"] = Fmt.bytes(stats.first)
+            d["net.iface.$name.tx"] = Fmt.bytes(stats.second)
+        }
         return d
     }
 

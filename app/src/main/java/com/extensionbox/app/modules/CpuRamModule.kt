@@ -23,6 +23,12 @@ class CpuRamModule : Module {
     private var ramUsed: Long = 0
     private var ramTotal: Long = 0
     private var ramAvail: Long = 0
+    
+    // Advanced data
+    private var coreFreqs = listOf<Long>()
+    private var coreGovs = listOf<String>()
+    private var gpuLoad = -1
+    private var gpuFreq = 0L
 
     override fun key(): String = "cpu_ram"
     override fun name(): String = "CPU & RAM"
@@ -68,7 +74,14 @@ class CpuRamModule : Module {
         }
 
         if (current != null) prevCpuTimes = current
-        sys?.readCpuTemp()?.let { cpuTemp = it }
+        sys?.let { s ->
+            s.readCpuTemp().let { cpuTemp = it }
+            coreFreqs = s.getCpuCoreFrequencies()
+            coreGovs = s.getCpuGovernors()
+            val gpu = s.getGpuData()
+            gpuLoad = gpu.first
+            gpuFreq = gpu.second
+        }
 
         try {
             val am = ctx?.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -135,7 +148,22 @@ class CpuRamModule : Module {
             sb.append(" • ${Fmt.temp(cpuTemp)}")
         }
         sb.append("\n   RAM: ${Fmt.bytes(ramUsed)} / ${Fmt.bytes(ramTotal)} (${ramPct.toInt()}%)\n")
-        sb.append("   Available: ${Fmt.bytes(ramAvail)}")
+        
+        if (gpuLoad >= 0) {
+            sb.append("   GPU: $gpuLoad%")
+            if (gpuFreq > 0) sb.append(" • ${gpuFreq / 1_000_000}MHz")
+            sb.append("\n")
+        }
+
+        if (coreFreqs.isNotEmpty()) {
+            sb.append("   Cores: ")
+            coreFreqs.forEachIndexed { i, f ->
+                if (f > 0) sb.append("${f/1000} ")
+            }
+            sb.append("\n")
+        }
+
+        sb.append("   Available RAM: ${Fmt.bytes(ramAvail)}")
         return sb.toString()
     }
 
@@ -148,6 +176,16 @@ class CpuRamModule : Module {
         d["ram.total"] = Fmt.bytes(ramTotal)
         d["ram.available"] = Fmt.bytes(ramAvail)
         d["ram.pct"] = "${ramPct.toInt()}%"
+
+        if (gpuLoad >= 0) {
+            d["gpu.load"] = "$gpuLoad%"
+            if (gpuFreq > 0) d["gpu.freq"] = "${gpuFreq / 1_000_000}MHz"
+        }
+
+        coreFreqs.forEachIndexed { i, f ->
+            if (f > 0) d["cpu.core$i"] = "${f/1000}MHz"
+        }
+        
         return d
     }
 

@@ -106,6 +106,20 @@ class BatteryModule : Module {
                 if (actualCap > 0) {
                     designCap = actualCap
                 }
+
+                // --- Charge Limiter Logic ---
+                if (s.rootProvider != SystemAccess.RootProvider.NONE) {
+                    val limitEnabled = Prefs.getBool(c, "bat_charge_limit_en", false)
+                    val limitVal = Prefs.getInt(c, "bat_charge_limit_val", 80)
+                    if (limitEnabled) {
+                        if (level >= limitVal && isCharging()) {
+                            s.setChargingEnabled(false)
+                        } else if (level < limitVal - 5 && !isCharging() && plugged > 0) {
+                            // Re-enable if dropped significantly below limit while plugged
+                            s.setChargingEnabled(true)
+                        }
+                    }
+                }
             }
         }
     }
