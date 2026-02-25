@@ -77,7 +77,7 @@ class AppUsageModule : Module {
         val name = top?.let { pkg -> 
             try { pm?.getApplicationLabel(pm.getApplicationInfo(pkg.key, 0))?.toString() } catch (e: Exception) { pkg.key.substringAfterLast('.') }
         }
-        return if (name != null) "Top: $name (${Fmt.duration(top!!.value)})" else "No usage data"
+        return if (name != null) "Top: $name (${Fmt.duration(top.value)})" else "No usage data"
     }
 
     override fun detail(): String {
@@ -208,8 +208,8 @@ class AppUsageModule : Module {
                                 Text(Fmt.duration(time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                             Spacer(modifier = Modifier.height(4.dp))
-                            LinearProgressIndicator(
-                                progress = time.toFloat() / maxUsage,
+                            androidx.compose.material3.LinearProgressIndicator(
+                                progress = { time.toFloat() / maxUsage },
                                 modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                                 trackColor = MaterialTheme.colorScheme.surfaceVariant

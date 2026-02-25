@@ -18,7 +18,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "extension_box_db"
-                ).fallbackToDestructiveMigration()
+                ).fallbackToDestructiveMigration(false)
                 .build()
                 INSTANCE = instance
                 instance

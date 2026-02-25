@@ -196,6 +196,7 @@ class SystemAccess(ctx: Context) {
 
     private fun readFileShizuku(path: String): String? {
         return try {
+            @Suppress("DEPRECATION")
             val p = Shizuku.newProcess(arrayOf("sh", "-c", "cat $path"), null, null)
             val br = BufferedReader(InputStreamReader(p.inputStream))
             val line = br.readLine()

@@ -16,6 +16,7 @@ class ConnectionModule : Module {
     private var connType = "None"
     private var wifiSsid = "—"
     private var wifiRssi = "—"
+    private var wifiLinkSpeed = 0
     private var wifiSpeed = "—"
     private var wifiFreq = "—"
     private var carrier = "—"
@@ -80,8 +81,11 @@ class ConnectionModule : Module {
     private fun readWifi() {
         val c = ctx ?: return
         try {
-            val wm = c.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            val wi = wm.connectionInfo
+            val cm = c.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val network = cm.activeNetwork
+            val caps = cm.getNetworkCapabilities(network)
+            val wi = caps?.transportInfo as? android.net.wifi.WifiInfo
+            
             if (wi != null) {
                 val ssid = wi.ssid
                 wifiSsid = if (ssid != null && ssid != "<unknown ssid>") {
@@ -90,7 +94,8 @@ class ConnectionModule : Module {
                     "Hidden"
                 }
                 wifiRssi = "${wi.rssi} dBm"
-                wifiSpeed = "${wi.linkSpeed} Mbps"
+                wifiLinkSpeed = wi.linkSpeed
+                wifiSpeed = "$wifiLinkSpeed Mbps"
                 val freq = wi.frequency
                 wifiFreq = if (freq > 4900) "5 GHz" else "2.4 GHz"
             }
