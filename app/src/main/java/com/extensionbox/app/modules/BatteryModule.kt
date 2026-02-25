@@ -87,16 +87,6 @@ class BatteryModule : Module {
                 text = ctx.getString(R.string.battery_module_screen_on, Fmt.duration(getTotalOn())),
                 style = MaterialTheme.typography.bodyMedium
             )
-
-            // App Usage integration (if enabled)
-            val useUsage = Prefs.isModuleEnabled(ctx, "app_usage", true)
-            if (useUsage) {
-                Spacer(modifier = Modifier.height(12.dp))
-                val usageMod = remember { AppUsageModule() }
-                usageMod.start(ctx, sys)
-                usageMod.tick() // Refresh data
-                usageMod.composableContent(ctx, sys)
-            }
         }
     }
 

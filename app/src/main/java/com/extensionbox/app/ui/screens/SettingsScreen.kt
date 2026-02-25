@@ -23,7 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -116,7 +116,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     }
 
     // Launchers
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(stringResource(id = R.string.application_json))) { uri ->
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         uri?.let {
             try {
                 val jsonObject = JSONObject()
@@ -289,48 +289,6 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                         )
                     }
                 }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
-
-                var modulesExpanded by remember { mutableStateOf(false) }
-                SettingsItem(
-                    title = stringResource(id = R.string.visible_modules),
-                    summary = stringResource(id = R.string.choose_which_stats_appear_in_notification),
-                    icon = Icons.Default.List,
-                    onClick = { modulesExpanded = !modulesExpanded }
-                )
-
-                if (modulesExpanded) {
-                    Column(modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)) {
-                        for (i in 0 until com.extensionbox.app.ui.ModuleRegistry.count()) {
-                            val key = com.extensionbox.app.ui.ModuleRegistry.keyAt(i)
-                            val name = com.extensionbox.app.ui.ModuleRegistry.nameAt(i)
-                            var isVisible by remember { mutableStateOf(Prefs.isModuleVisibleInNotif(context, key)) }
-                            
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { 
-                                        isVisible = !isVisible
-                                        Prefs.setModuleVisibleInNotif(context, key, isVisible)
-                                    }
-                                    .padding(vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(text = name, style = MaterialTheme.typography.bodySmall)
-                                Checkbox(
-                                    checked = isVisible,
-                                    onCheckedChange = {
-                                        isVisible = it
-                                        Prefs.setModuleVisibleInNotif(context, key, it)
-                                    },
-                                    modifier = Modifier.scale(0.8f)
-                                )
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -401,6 +359,20 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                     onCheckedChange = {
                         resetFull = it
                         Prefs.setBool(context, "scr_reset_full", it)
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
+
+                var resetPlugged by remember { mutableStateOf(Prefs.getBool(context, "scr_reset_plugged", false)) }
+                SettingsToggle(
+                    title = "Reset on Plugged",
+                    summary = "Clear stats when device is plugged in",
+                    icon = Icons.Default.Power,
+                    checked = resetPlugged,
+                    onCheckedChange = {
+                        resetPlugged = it
+                        Prefs.setBool(context, "scr_reset_plugged", it)
                     }
                 )
 

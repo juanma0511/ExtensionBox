@@ -12,6 +12,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -28,6 +29,7 @@ import androidx.navigation.compose.*
 import com.extensionbox.app.ui.components.AppScaffold
 import com.extensionbox.app.ui.screens.*
 import com.extensionbox.app.ui.theme.ExtensionBoxTheme
+import rikka.shizuku.Shizuku
 
 class MainActivity : ComponentActivity() {
 
@@ -35,11 +37,20 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { }
 
+    private val REQUEST_PERMISSION_RESULT_LISTENER = object : Shizuku.OnRequestPermissionResultListener {
+        override fun onRequestPermissionResult(requestCode: Int, grantResult: Int) {
+            // Handle permission result
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ThemeHelper.apply(this)
         enableEdgeToEdge()
         requestPerms()
+
+        // Shizuku setup
+        Shizuku.addRequestPermissionResultListener(REQUEST_PERMISSION_RESULT_LISTENER)
 
         setContent {
             val themeIndex by Prefs.getIntFlow(this, "app_theme", ThemeHelper.MONET).collectAsState(initial = ThemeHelper.MONET)
@@ -68,6 +79,11 @@ class MainActivity : ComponentActivity() {
             ) perms.add(Manifest.permission.ACTIVITY_RECOGNITION)
         }
         if (perms.isNotEmpty()) permissionLauncher.launch(perms.toTypedArray())
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Shizuku.removeRequestPermissionResultListener(REQUEST_PERMISSION_RESULT_LISTENER)
     }
 }
 
@@ -107,7 +123,7 @@ fun MainApp() {
         navigationIcon = {
             if (!isTopLevel) {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             }
         },

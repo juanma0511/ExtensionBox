@@ -1,6 +1,7 @@
 package com.extensionbox.app.ui
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.DirectionsWalk
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -17,6 +18,7 @@ object ModuleRegistry {
 
     private val MODULES = listOf(
         ModuleDef("battery", Icons.Rounded.BatteryChargingFull, "🔋", "Battery & Screen", "Battery health, power and screen usage", true),
+        ModuleDef("app_usage", Icons.Rounded.Apps, "📱", "App Usage", "Time spent in each application", true),
         ModuleDef("cpu", Icons.Rounded.Memory, "🧠", "CPU", "CPU usage, frequency and temperature", true),
         ModuleDef("ram", Icons.Rounded.Memory, "🧠", "RAM", "Memory status and running processes", true),
         ModuleDef("sleep", Icons.Rounded.Bedtime, "😴", "Deep Sleep", "CPU sleep vs awake ratio", true),
@@ -26,7 +28,7 @@ object ModuleRegistry {
         ModuleDef("storage", Icons.Rounded.Storage, "💾", "Storage", "Internal storage usage", false),
         ModuleDef("connection", Icons.Rounded.SettingsInputAntenna, "📡", "Connection Info", "WiFi, cellular, VPN status", false),
         ModuleDef("uptime", Icons.Rounded.History, "🕒", "Uptime", "Device uptime since boot", false),
-        ModuleDef("steps", Icons.Rounded.DirectionsWalk, "👣", "Step Counter", "Steps and distance", false),
+        ModuleDef("steps", Icons.AutoMirrored.Rounded.DirectionsWalk, "👣", "Step Counter", "Steps and distance", false),
         ModuleDef("speedtest", Icons.Rounded.Speed, "🏎", "Speed Test", "Periodic download/upload speed test", false),
         ModuleDef("fap", Icons.Rounded.Favorite, "🍆", "Fap Counter", "Self-monitoring counter & streak", false)
     )

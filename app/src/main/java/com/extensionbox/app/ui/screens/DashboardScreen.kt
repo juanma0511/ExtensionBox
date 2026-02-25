@@ -57,6 +57,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel(), onModuleClick: 
     val dashData by viewModel.dashData.collectAsState()
     val historyData by viewModel.historyData.collectAsState()
     val visibleModules by viewModel.visibleModules.collectAsState()
+    val sysAccess by viewModel.sysAccess.collectAsState()
 
     val lazyListState = rememberLazyListState()
     val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
@@ -96,6 +97,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel(), onModuleClick: 
                                 key = key,
                                 data = data,
                                 history = historyData[key] ?: emptyList(),
+                                sysAccess = sysAccess,
                                 onClick = { onModuleClick(key) },
                                 reorderableItemScope = this,
                                 modifier = Modifier
@@ -206,7 +208,7 @@ fun PulseIndicator(label: String, value: String, progress: Float, color: Color) 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(64.dp)) {
             CircularProgressIndicator(
-                progress = progress,
+                progress = { progress },
                 modifier = Modifier.fillMaxSize().rotate(-90f),
                 strokeWidth = 6.dp,
                 color = color,
@@ -225,10 +227,13 @@ fun KernelCard(
     key: String, 
     data: Map<String, String>, 
     history: List<ModuleDataEntity>,
+    sysAccess: com.extensionbox.app.SystemAccess?,
     onClick: () -> Unit,
     reorderableItemScope: ReorderableCollectionItemScope,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val module = ModuleRegistry.getModule(key)
     val icon = ModuleRegistry.iconFor(key)
     val name = ModuleRegistry.nameFor(key)
     val primaryValue = data.values.firstOrNull() ?: ""
@@ -289,6 +294,11 @@ fun KernelCard(
                     modifier = Modifier.padding(start = 8.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            if (module != null && sysAccess != null) {
+                Spacer(Modifier.height(8.dp))
+                module.dashboardContent(context, sysAccess)
             }
         }
     }

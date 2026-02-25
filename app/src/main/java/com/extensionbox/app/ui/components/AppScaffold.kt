@@ -57,7 +57,7 @@ fun AppScaffold(
                 },
                 navigationIcon = navigationIcon,
                 scrollBehavior = localScrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
                 ),
