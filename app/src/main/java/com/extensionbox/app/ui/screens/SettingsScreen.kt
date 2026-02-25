@@ -404,6 +404,20 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
+                var resetPlugged by remember { mutableStateOf(Prefs.getBool(context, "scr_reset_plugged", false)) }
+                SettingsToggle(
+                    title = "Reset on Plugged",
+                    summary = "Clear stats when device is plugged in",
+                    icon = Icons.Default.Power,
+                    checked = resetPlugged,
+                    onCheckedChange = {
+                        resetPlugged = it
+                        Prefs.setBool(context, "scr_reset_plugged", it)
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
+
                 var resetBoot by remember { mutableStateOf(Prefs.getBool(context, "scr_reset_boot", true)) }
                 SettingsToggle(
                     title = "Reset on Reboot",

@@ -4,9 +4,18 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
@@ -54,8 +63,8 @@ class AppUsageModule : Module {
             val newMap = mutableMapOf<String, Long>()
             for (s in stats) {
                 if (s.totalTimeInForeground > 0) {
-                    val name = s.packageName.substringAfterLast('.')
-                    newMap[name] = (newMap[name] ?: 0L) + s.totalTimeInForeground
+                    val pkg = s.packageName
+                    newMap[pkg] = (newMap[pkg] ?: 0L) + s.totalTimeInForeground
                 }
             }
             usageMap = newMap.toList().sortedByDescending { it.second }.take(10).toMap().toMutableMap()
@@ -64,16 +73,22 @@ class AppUsageModule : Module {
 
     override fun compact(): String {
         val top = usageMap.maxByOrNull { it.value }
-        return if (top != null) "Top: ${top.key} (${Fmt.duration(top.value)})" else "No usage data"
+        val pm = ctx?.packageManager
+        val name = top?.let { pkg -> 
+            try { pm?.getApplicationLabel(pm.getApplicationInfo(pkg.key, 0))?.toString() } catch (e: Exception) { pkg.key.substringAfterLast('.') }
+        }
+        return if (name != null) "Top: $name (${Fmt.duration(top!!.value)})" else "No usage data"
     }
 
     override fun detail(): String {
         val sb = StringBuilder()
+        val pm = ctx?.packageManager
         sb.append("📱 Today's App Usage:\n")
         if (usageMap.isEmpty()) {
             sb.append("   No data. Ensure Usage Access is granted.\n")
         } else {
-            usageMap.toList().sortedByDescending { it.second }.forEach { (name, time) ->
+            usageMap.toList().sortedByDescending { it.second }.forEach { (pkg, time) ->
+                val name = try { pm?.getApplicationLabel(pm.getApplicationInfo(pkg, 0))?.toString() ?: pkg.substringAfterLast('.') } catch (e: Exception) { pkg.substringAfterLast('.') }
                 sb.append("   • ${name.padEnd(16)} ${Fmt.duration(time)}\n")
             }
         }
@@ -82,13 +97,129 @@ class AppUsageModule : Module {
 
     override fun dataPoints(): LinkedHashMap<String, String> {
         val d = LinkedHashMap<String, String>()
-        usageMap.forEach { (name, time) ->
+        val pm = ctx?.packageManager
+        usageMap.forEach { (pkg, time) ->
+            val name = try { pm?.getApplicationLabel(pm.getApplicationInfo(pkg, 0))?.toString() ?: pkg.substringAfterLast('.') } catch (e: Exception) { pkg.substringAfterLast('.') }
             d["usage.$name"] = Fmt.duration(time)
         }
         return d
     }
 
     override fun checkAlerts(ctx: Context) {}
+
+    @androidx.compose.runtime.Composable
+    override fun dashboardContent(ctx: Context, sys: SystemAccess) {
+        val hasPermission = remember { mutableStateOf(checkPermission(ctx)) }
+        if (!hasPermission.value) return
+
+        val sortedUsage = usageMap.toList().sortedByDescending { it.second }
+        if (sortedUsage.isEmpty()) return
+
+        val totalTime = sortedUsage.sumOf { it.second }
+        val sortedTop = sortedUsage.take(5)
+        val maxUsage = sortedTop.first().second.toFloat()
+        val pm = ctx.packageManager
+
+        Column(
+            modifier = Modifier.padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Total Usage Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text("Total Today", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(Fmt.duration(totalTime), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                }
+                Text("${sortedUsage.size} Apps Used", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            // Simple Multi-Bar Graph
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                val colors = listOf(
+                    MaterialTheme.colorScheme.primary,
+                    MaterialTheme.colorScheme.secondary,
+                    MaterialTheme.colorScheme.tertiary,
+                    MaterialTheme.colorScheme.error,
+                    MaterialTheme.colorScheme.primaryContainer
+                )
+                sortedTop.forEachIndexed { index, (_, time) ->
+                    val weight = time.toFloat() / totalTime.toFloat()
+                    if (weight > 0.01f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .weight(weight)
+                                .background(colors[index % colors.size])
+                        )
+                    }
+                }
+            }
+
+            // App List
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                sortedTop.forEach { (pkg, time) ->
+                    val appName = remember(pkg) {
+                        try { pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() }
+                        catch (e: Exception) { pkg.substringAfterLast('.') }
+                    }
+                    val icon = remember(pkg) {
+                        try {
+                            val drawable = pm.getApplicationIcon(pkg)
+                            val bitmap = android.graphics.Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, android.graphics.Bitmap.Config.ARGB_8888)
+                            val canvas = android.graphics.Canvas(bitmap)
+                            drawable.setBounds(0, 0, canvas.width, canvas.height)
+                            drawable.draw(canvas)
+                            bitmap.asImageBitmap()
+                        } catch (e: Exception) { null }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        if (icon != null) {
+                            Image(
+                                bitmap = icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(28.dp).clip(CircleShape)
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier.size(28.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                            )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(appName, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                Text(Fmt.duration(time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            LinearProgressIndicator(
+                                progress = time.toFloat() / maxUsage,
+                                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     @androidx.compose.runtime.Composable
     override fun settingsContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
@@ -106,26 +237,21 @@ class AppUsageModule : Module {
     }
 
     @androidx.compose.runtime.Composable
-    override fun composableContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+    override fun composableContent(ctx: Context, sys: SystemAccess) {
         val hasPermission = remember { mutableStateOf(checkPermission(ctx)) }
         
         if (!hasPermission.value) {
-            androidx.compose.material3.Button(
+            Button(
                 onClick = {
                     ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 },
-                modifier = androidx.compose.ui.Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
-                androidx.compose.material3.Text("Grant Usage Access")
+                Text("Grant Usage Access")
             }
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                usageMap.toList().sortedByDescending { it.second }.take(5).forEach { (name, time) ->
-                    Row(modifier = androidx.compose.ui.Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        androidx.compose.material3.Text(name, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, modifier = androidx.compose.ui.Modifier.weight(1f))
-                        androidx.compose.material3.Text(Fmt.duration(time), style = androidx.compose.material3.MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                    }
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                dashboardContent(ctx, sys)
             }
         }
     }
