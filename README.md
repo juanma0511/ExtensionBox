@@ -37,6 +37,10 @@ Extension Box provides structured, modular system monitoring without unnecessary
 
 ## Current Features
 
+### 📲​ Debloater
+- Uninstall whatever app you want!
+- Every app is cataloged by colors and name if they can harm the system or no!
+
 ### 🔋 Battery
 - Current (mA)
 - Power (W)
@@ -114,7 +118,7 @@ Extension Box provides structured, modular system monitoring without unnecessary
 ## Requirements
 
 - Android 8.0+
-- Required permissions vary depending on enabled modules
+- Required permissions vary depending on enabled modules (Root/Shizuku)
 
 ---
 
