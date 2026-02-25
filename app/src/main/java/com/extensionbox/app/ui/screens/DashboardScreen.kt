@@ -206,7 +206,7 @@ fun PulseIndicator(label: String, value: String, progress: Float, color: Color) 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(64.dp)) {
             CircularProgressIndicator(
-                progress = progress,
+                progress = { progress },
                 modifier = Modifier.fillMaxSize().rotate(-90f),
                 strokeWidth = 6.dp,
                 color = color,
