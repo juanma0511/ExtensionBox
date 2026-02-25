@@ -170,7 +170,9 @@ fun MainApp() {
             composable(Screen.Dashboard.route) { DashboardScreen(viewModel = dashboardViewModel, onModuleClick = { key ->
                 navController.navigate("module/$key")
             }) }
-            composable(Screen.Extensions.route) { ExtensionsScreen() }
+            composable(Screen.Extensions.route) { ExtensionsScreen(onModuleClick = { key ->
+                navController.navigate("module/$key")
+            }) }
             composable(Screen.Settings.route) { SettingsScreen() }
             composable(Screen.About.route) { AboutScreen() }
             composable("module/{key}") { backStackEntry ->

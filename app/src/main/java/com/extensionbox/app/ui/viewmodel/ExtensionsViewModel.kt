@@ -15,8 +15,6 @@ class ExtensionsViewModel(application: Application) : AndroidViewModel(applicati
     private val _moduleStates = MutableStateFlow<Map<String, Boolean>>(emptyMap())
     val moduleStates: StateFlow<Map<String, Boolean>> = _moduleStates.asStateFlow()
 
-    val expandedStates = mutableStateMapOf<String, Boolean>()
-
     init {
         loadModuleStates()
     }
@@ -35,9 +33,5 @@ class ExtensionsViewModel(application: Application) : AndroidViewModel(applicati
         val current = _moduleStates.value.toMutableMap()
         current[key] = enabled
         _moduleStates.value = current
-    }
-
-    fun toggleExpansion(key: String) {
-        expandedStates[key] = !(expandedStates[key] ?: false)
     }
 }
