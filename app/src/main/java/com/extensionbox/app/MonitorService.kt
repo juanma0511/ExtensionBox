@@ -52,7 +52,7 @@ class MonitorService : Service() {
     private var syncJob: Job? = null
     private val moduleStates = ConcurrentHashMap<String, Boolean>()
 
-    private val screenReceiver = object : android.content.BroadcastReceiver() {
+    private val powerReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
             when (intent?.action) {
                 Intent.ACTION_SCREEN_ON -> {
@@ -62,6 +62,11 @@ class MonitorService : Service() {
                 }
                 Intent.ACTION_SCREEN_OFF -> {
                     isScreenOn = false
+                }
+                Intent.ACTION_POWER_CONNECTED -> {
+                    if (Prefs.getBool(this@MonitorService, "scr_reset_plugged", false)) {
+                        resetAllModules()
+                    }
                 }
             }
         }
@@ -82,8 +87,9 @@ class MonitorService : Service() {
         val filter = android.content.IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_POWER_CONNECTED)
         }
-        registerReceiver(screenReceiver, filter)
+        registerReceiver(powerReceiver, filter)
 
         // Asynchronous heavy initialization
         serviceScope.launch(Dispatchers.IO) {
@@ -92,6 +98,7 @@ class MonitorService : Service() {
             
             modules = listOf(
                 BatteryModule(),
+                AppUsageModule(),
                 CpuModule(),
                 RamModule(),
                 SleepModule(),
@@ -199,7 +206,7 @@ class MonitorService : Service() {
         syncJob?.cancel()
         serviceJob.cancel()
         try {
-            unregisterReceiver(screenReceiver)
+            unregisterReceiver(powerReceiver)
         } catch (ignored: Exception) {}
         
         if (::sysAccess.isInitialized) {

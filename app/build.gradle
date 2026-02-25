@@ -15,8 +15,8 @@ android {
         applicationId "extension.box"
         minSdk 26
         targetSdk 36
-        versionCode 11
-        versionName "2.0.0-compose"
+        versionCode 12
+        versionName "2.0.1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

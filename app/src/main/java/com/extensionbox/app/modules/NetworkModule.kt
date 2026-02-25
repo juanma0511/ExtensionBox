@@ -125,17 +125,20 @@ class NetworkModule : Module {
         prevTime = now
     }
 
-    override fun compact(): String = "↓${Fmt.speed(dlSpeed)} ↑${Fmt.speed(ulSpeed)}"
+    override fun compact(): String = "DL: ${Fmt.speed(dlSpeed)} UL: ${Fmt.speed(ulSpeed)}"
 
     override fun detail(): String {
         val sb = StringBuilder()
-        sb.append("📶 Download: ${Fmt.speed(dlSpeed)}\n   Upload: ${Fmt.speed(ulSpeed)}\n")
-        if (interfaceStats.isNotEmpty()) {
-            sb.append("   Interfaces:\n")
-            interfaceStats.forEach { (name, _) ->
-                if (name != "lo") {
-                    sb.append("   • $name\n")
-                }
+        sb.append("📊 Network Traffic:\n")
+        sb.append("   ⬇ Download: ${Fmt.speed(dlSpeed)}\n")
+        sb.append("   ⬆ Upload:   ${Fmt.speed(ulSpeed)}\n")
+        
+        val activeIfaces = interfaceStats.filter { it.key != "lo" && (it.value.first > 0 || it.value.second > 0) }
+        if (activeIfaces.isNotEmpty()) {
+            sb.append("\n   Active Interfaces:\n")
+            activeIfaces.forEach { (name, stats) ->
+                sb.append("   • $name:\n")
+                sb.append("     RX: ${Fmt.bytes(stats.first)} | TX: ${Fmt.bytes(stats.second)}\n")
             }
         }
         return sb.toString().trim()
@@ -145,10 +148,12 @@ class NetworkModule : Module {
         val d = LinkedHashMap<String, String>()
         d["net.download"] = Fmt.speed(dlSpeed)
         d["net.upload"] = Fmt.speed(ulSpeed)
-        interfaceStats.forEach { (name, stats) ->
-            d["net.iface.$name.rx"] = Fmt.bytes(stats.first)
-            d["net.iface.$name.tx"] = Fmt.bytes(stats.second)
-        }
+        
+        // Only include active interfaces in data points to reduce clutter
+        interfaceStats.filter { it.key != "lo" && (it.value.first > 0 || it.value.second > 0) }
+            .forEach { (name, stats) ->
+                d["net.iface.$name"] = "RX: ${Fmt.bytes(stats.first)} TX: ${Fmt.bytes(stats.second)}"
+            }
         return d
     }
 

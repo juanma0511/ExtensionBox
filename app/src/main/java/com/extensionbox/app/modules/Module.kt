@@ -22,6 +22,12 @@ interface Module {
     fun reset() {}
 
     /**
+     * Optional Compose UI content for the module's dashboard card.
+     */
+    @androidx.compose.runtime.Composable
+    fun dashboardContent(ctx: Context, sys: SystemAccess) {}
+
+    /**
      * Optional Compose UI content for the module's detail view (e.g., sliders, toggles).
      */
     @androidx.compose.runtime.Composable

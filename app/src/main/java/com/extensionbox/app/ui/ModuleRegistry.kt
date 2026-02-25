@@ -17,6 +17,7 @@ object ModuleRegistry {
 
     private val MODULES = listOf(
         ModuleDef("battery", Icons.Rounded.BatteryChargingFull, "🔋", "Battery & Screen", "Battery health, power and screen usage", true),
+        ModuleDef("app_usage", Icons.Rounded.Apps, "📱", "App Usage", "Time spent in each application", true),
         ModuleDef("cpu", Icons.Rounded.Memory, "🧠", "CPU", "CPU usage, frequency and temperature", true),
         ModuleDef("ram", Icons.Rounded.Memory, "🧠", "RAM", "Memory status and running processes", true),
         ModuleDef("sleep", Icons.Rounded.Bedtime, "😴", "Deep Sleep", "CPU sleep vs awake ratio", true),

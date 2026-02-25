@@ -81,16 +81,6 @@ class BatteryModule : Module {
                 text = "Screen On: ${Fmt.duration(getTotalOn())}",
                 style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
             )
-
-            // App Usage integration (if enabled)
-            val useUsage = Prefs.isModuleEnabled(ctx, "app_usage", true)
-            if (useUsage) {
-                Spacer(modifier = Modifier.height(12.dp))
-                val usageMod = remember { AppUsageModule() }
-                usageMod.start(ctx, sys)
-                usageMod.tick() // Refresh data
-                usageMod.composableContent(ctx, sys)
-            }
         }
     }
 
@@ -220,15 +210,6 @@ class BatteryModule : Module {
                 onCheckedChange = {
                     showDrain = it
                     Prefs.setBool(ctx, "scr_show_drain", it)
-                }
-            )
-            var useUsage by remember { mutableStateOf(Prefs.getBool(ctx, "m_app_usage_enabled", true)) }
-            SettingSwitch(
-                label = "Show App Usage",
-                checked = useUsage,
-                onCheckedChange = {
-                    useUsage = it
-                    Prefs.setBool(ctx, "m_app_usage_enabled", it)
                 }
             )
             var timeLimit by remember { mutableStateOf(Prefs.getInt(ctx, "scr_time_limit", 0).toFloat()) }
