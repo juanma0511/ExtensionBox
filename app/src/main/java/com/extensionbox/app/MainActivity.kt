@@ -188,6 +188,8 @@ fun MainApp() {
             }) }
             composable(Screen.Extensions.route) { ExtensionsScreen(onModuleClick = { key ->
                 navController.navigate("module/$key")
+            }, onDebloatClick = {
+                navController.navigate("debloat")
             }) }
             composable(Screen.Settings.route) { SettingsScreen() }
             composable(Screen.About.route) { AboutScreen() }
@@ -195,6 +197,7 @@ fun MainApp() {
                 val key = backStackEntry.arguments?.getString("key") ?: return@composable
                 ModuleDetailScreen(moduleKey = key, viewModel = dashboardViewModel)
             }
+            composable("debloat") { DebloatScreen() }
         }
     }
 }
