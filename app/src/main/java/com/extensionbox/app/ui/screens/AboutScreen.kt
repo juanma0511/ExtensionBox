@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,7 +46,8 @@ fun AboutScreen() {
     var accessTier by remember { mutableStateOf(sysAccess.tier) }
     var rootProvider by remember { mutableStateOf(sysAccess.rootProvider) }
 
-    var updateStatus by remember { mutableStateOf("Check for Updates") }
+    val checkForUpdates = stringResource(R.string.check_for_updates)
+    var updateStatus by remember { mutableStateOf(checkForUpdates) }
     var isChecking by remember { mutableStateOf(false) }
 
     Column(
@@ -69,7 +71,7 @@ fun AboutScreen() {
                 Box(contentAlignment = Alignment.Center) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                        contentDescription = "Logo",
+                        contentDescription = stringResource(id = R.string.logo),
                         modifier = Modifier.size(80.dp)
                     )
                 }
@@ -78,12 +80,12 @@ fun AboutScreen() {
             Spacer(Modifier.height(16.dp))
 
             Text(
-                text = "Extension Box",
+                text = stringResource(id = R.string.extension_box),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Version ${BuildConfig.VERSION_NAME}",
+                text = stringResource(id = R.string.version_name, BuildConfig.VERSION_NAME),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Medium
@@ -93,7 +95,7 @@ fun AboutScreen() {
         // --- Description Card ---
         AppCard {
             Text(
-                text = "A modern, lightweight system monitoring tool with a modular architecture built for Android enthusiasts and power users.",
+                text = stringResource(id = R.string.about_description),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyLarge,
                 lineHeight = 22.sp,
@@ -124,7 +126,7 @@ fun AboutScreen() {
                 Spacer(Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "System Access",
+                        text = stringResource(id = R.string.system_access),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -136,7 +138,7 @@ fun AboutScreen() {
                     )
                     if (rootProvider != SystemAccess.RootProvider.NONE) {
                         Text(
-                            text = "via ${rootProvider.label}",
+                            text = stringResource(id = R.string.via_root_provider, rootProvider.label),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -148,7 +150,7 @@ fun AboutScreen() {
                     accessTier = sysAccess.tier
                     rootProvider = sysAccess.rootProvider
                 }) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh Access")
+                    Icon(Icons.Default.Refresh, contentDescription = stringResource(id = R.string.refresh_access))
                 }
             }
         }
@@ -168,7 +170,7 @@ fun AboutScreen() {
                 Spacer(Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Software Update",
+                        text = stringResource(id = R.string.software_update),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -182,10 +184,14 @@ fun AboutScreen() {
                 if (isChecking) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 } else {
+                    val checkingGithub = stringResource(id = R.string.checking_github)
+                    val latestVersionMessage = stringResource(id = R.string.latest_version_message)
+                    val newVersionAvailable = stringResource(id = R.string.new_version_available)
+                    val updateCheckFailed = stringResource(id = R.string.update_check_failed)
                     IconButton(
                         onClick = {
                             isChecking = true
-                            updateStatus = "Checking GitHub..."
+                            updateStatus = checkingGithub
                             coroutineScope.launch {
                                 try {
                                     val service = UpdateChecker.getGitHubService()
@@ -193,13 +199,13 @@ fun AboutScreen() {
                                     if (releases.isNotEmpty()) {
                                         val latest = releases[0].tagName
                                         updateStatus = if (latest.contains(BuildConfig.VERSION_NAME)) {
-                                            "You're using the latest version ✨"
+                                            latestVersionMessage
                                         } else {
-                                            "New version available: $latest"
+                                            String.format(newVersionAvailable, latest)
                                         }
                                     }
                                 } catch (e: Exception) {
-                                    updateStatus = "Update check failed"
+                                    updateStatus = updateCheckFailed
                                 } finally {
                                     isChecking = false
                                 }
@@ -222,7 +228,7 @@ fun AboutScreen() {
                 Icon(Icons.Default.Code, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Engineering Team",
+                    text = stringResource(id = R.string.engineering_team),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -231,15 +237,24 @@ fun AboutScreen() {
             
             AppCard {
                 DeveloperItem(
-                    name = "Suvojeet Sengupta",
-                    role = "Lead Developer • Kotlin & Shizuku",
+                    name = stringResource(id = R.string.suvojeet_sengupta),
+                    role = stringResource(id = R.string.lead_developer),
                     github = "https://github.com/suvojeet-sengupta",
                     onCli = { uriHandler.openUri(it) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
+
                 DeveloperItem(
-                    name = "Omer",
-                    role = "Contributor",
+                    name = stringResource(id = R.string.pankaj_meharchandani),
+                    role = stringResource(id = R.string.developer),
+                    github = "https://github.com/Pankaj-Meharchandani",
+                    onCli = { uriHandler.openUri(it) }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                DeveloperItem(
+                    name = stringResource(id = R.string.omer),
+                    role = stringResource(id = R.string.contributor),
                     github = "https://github.com/omersusin",
                     onCli = { uriHandler.openUri(it) }
                 )

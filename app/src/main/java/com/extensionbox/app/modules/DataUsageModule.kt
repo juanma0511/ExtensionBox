@@ -32,9 +32,9 @@ class DataUsageModule : Module {
     private var monthMobile = 0L
 
     override fun key(): String = "data"
-    override fun name(): String = "Data Usage"
+    override fun name(): String = ctx?.getString(R.string.data_usage_module_name) ?: "Data Usage"
     override fun emoji(): String = "📊"
-    override fun description(): String = "Daily & monthly, WiFi & mobile"
+    override fun description(): String = ctx?.getString(R.string.data_usage_module_description) ?: "Daily & monthly, WiFi & mobile"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running
     override fun priority(): Int = 50
@@ -131,7 +131,7 @@ class DataUsageModule : Module {
         Prefs.setInt(c, "dat_last_bill", day)
     }
 
-    override fun compact(): String = "Today:${Fmt.bytes(dailyTotal)}"
+    override fun compact(): String = ctx?.getString(R.string.data_usage_module_compact_text, Fmt.bytes(dailyTotal)) ?: ""
 
     override fun detail(): String {
         val sb = StringBuilder()
@@ -139,18 +139,18 @@ class DataUsageModule : Module {
         val breakdown = if (c != null) Prefs.getBool(c, "dat_show_breakdown", true) else true
 
         if (breakdown) {
-            sb.append("📊 Today: ${Fmt.bytes(dailyTotal)} (W:${Fmt.bytes(dailyWifi)} M:${Fmt.bytes(dailyMobile)})\n")
+            sb.append(c?.getString(R.string.data_usage_module_today_with_breakdown, Fmt.bytes(dailyTotal), Fmt.bytes(dailyWifi), Fmt.bytes(dailyMobile)))
         } else {
-            sb.append("📊 Today: ${Fmt.bytes(dailyTotal)}\n")
+            sb.append(c?.getString(R.string.data_usage_module_today_simple, Fmt.bytes(dailyTotal)))
         }
 
-        sb.append("   Month: ${Fmt.bytes(monthTotal)}")
+        sb.append(c?.getString(R.string.data_usage_module_month, Fmt.bytes(monthTotal)))
 
         val planMb = if (c != null) Prefs.getInt(c, "dat_plan_limit", 0) else 0
         if (planMb > 0) {
             val planBytes = planMb * 1024L * 1024L
             val pct = monthTotal * 100f / planBytes
-            sb.append(String.format(Locale.US, " / %s (%.1f%%)", Fmt.bytes(planBytes), pct))
+            sb.append(String.format(Locale.US, c?.getString(R.string.data_usage_module_month_plan_usage) ?: "", Fmt.bytes(planBytes), pct))
         }
         return sb.toString()
     }
@@ -170,7 +170,7 @@ class DataUsageModule : Module {
         
         Column {
             SettingSlider(
-                label = "Update Interval",
+                label = ctx.getString(R.string.data_usage_module_update_interval),
                 value = interval,
                 onValueChange = {
                     interval = it
@@ -184,7 +184,7 @@ class DataUsageModule : Module {
 
             var split by remember { mutableStateOf(Prefs.getBool(ctx, "dat_show_breakdown", true)) }
             SettingSwitch(
-                label = "WiFi/Mobile Split",
+                label = ctx.getString(R.string.data_usage_module_wifi_mobile_split),
                 checked = split,
                 onCheckedChange = {
                     split = it
@@ -193,19 +193,19 @@ class DataUsageModule : Module {
             )
             var planLimit by remember { mutableStateOf(Prefs.getInt(ctx, "dat_plan_limit", 0).toFloat()) }
             SettingSlider(
-                label = "Monthly Plan Limit",
+                label = ctx.getString(R.string.data_usage_module_monthly_plan_limit),
                 value = planLimit,
                 valueRange = 0f..10000f,
                 onValueChange = {
                     planLimit = it
                     Prefs.setInt(ctx, "dat_plan_limit", it.toInt())
                 },
-                formatter = { if (it == 0f) "No Limit" else "${it.toInt()} MB" }
+                formatter = { if (it == 0f) ctx.getString(R.string.data_usage_module_no_limit) else "${it.toInt()}${ctx.getString(R.string.data_usage_module_megabytes)}" }
             )
             if (planLimit > 0) {
                 var alertPct by remember { mutableStateOf(Prefs.getInt(ctx, "dat_plan_alert_pct", 90).toFloat()) }
                 SettingSlider(
-                    label = "Plan Alert Percentage",
+                    label = ctx.getString(R.string.data_usage_module_plan_alert_percentage),
                     value = alertPct,
                     valueRange = 50f..100f,
                     onValueChange = {
@@ -217,7 +217,7 @@ class DataUsageModule : Module {
             }
             var billingDay by remember { mutableStateOf(Prefs.getInt(ctx, "dat_billing_day", 1).toFloat()) }
             SettingSlider(
-                label = "Billing Day",
+                label = ctx.getString(R.string.data_usage_module_billing_day),
                 value = billingDay,
                 valueRange = 1f..31f,
                 onValueChange = {
@@ -242,8 +242,8 @@ class DataUsageModule : Module {
                 val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 nm.notify(2005, NotificationCompat.Builder(ctx, "ebox_alerts")
                     .setSmallIcon(R.drawable.ic_notif)
-                    .setContentTitle("⚠️ Data Plan Warning")
-                    .setContentText(String.format(Locale.US, "Used %.0f%% of %s plan", pct, Fmt.bytes(planBytes)))
+                    .setContentTitle(ctx.getString(R.string.data_usage_module_plan_warning_title))
+                    .setContentText(ctx.getString(R.string.data_usage_module_plan_warning_content, pct, Fmt.bytes(planBytes)))
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true).build())
             } catch (ignored: Exception) {

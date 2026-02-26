@@ -6,6 +6,7 @@ import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
 import android.telephony.TelephonyManager
 import com.extensionbox.app.Prefs
+import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
 import java.util.LinkedHashMap
 
@@ -24,9 +25,9 @@ class ConnectionModule : Module {
     private var vpnActive = false
 
     override fun key(): String = "connection"
-    override fun name(): String = "Connection Info"
+    override fun name(): String = ctx?.getString(R.string.connection_module_name) ?: "Connection Info"
     override fun emoji(): String = "📡"
-    override fun description(): String = "WiFi, cellular, VPN status"
+    override fun description(): String = ctx?.getString(R.string.connection_module_description) ?: "WiFi, cellular, VPN status"
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running
     override fun priority(): Int = 90
@@ -48,13 +49,13 @@ class ConnectionModule : Module {
             val cm = c.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
             val net = cm.activeNetwork
             if (net == null) {
-                connType = "None"
+                connType = c.getString(R.string.connection_module_type_none)
                 return
             }
 
             val caps = cm.getNetworkCapabilities(net)
             if (caps == null) {
-                connType = "None"
+                connType = c.getString(R.string.connection_module_type_none)
                 return
             }
 
@@ -62,19 +63,19 @@ class ConnectionModule : Module {
 
             when {
                 caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
-                    connType = "WiFi"
+                    connType = c.getString(R.string.connection_module_type_wifi)
                     readWifi()
                 }
                 caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
-                    connType = "Mobile"
+                    connType = c.getString(R.string.connection_module_type_mobile)
                     readCell()
                 }
                 else -> {
-                    connType = "Other"
+                    connType = c.getString(R.string.connection_module_type_other)
                 }
             }
         } catch (e: Exception) {
-            connType = "Error"
+            connType = c.getString(R.string.connection_module_type_error)
         }
     }
 
@@ -91,16 +92,16 @@ class ConnectionModule : Module {
                 wifiSsid = if (ssid != null && ssid != "<unknown ssid>") {
                     ssid.replace("\"", "")
                 } else {
-                    "Hidden"
+                    c.getString(R.string.connection_module_hidden_ssid)
                 }
-                wifiRssi = "${wi.rssi} dBm"
+                wifiRssi = "${wi.rssi}${c.getString(R.string.connection_module_dbm)}"
                 wifiLinkSpeed = wi.linkSpeed
-                wifiSpeed = "$wifiLinkSpeed Mbps"
+                wifiSpeed = "${wi.linkSpeed}${c.getString(R.string.connection_module_mbps)}"
                 val freq = wi.frequency
-                wifiFreq = if (freq > 4900) "5 GHz" else "2.4 GHz"
+                wifiFreq = if (freq > 4900) c.getString(R.string.connection_module_5ghz) else c.getString(R.string.connection_module_2_4ghz)
             }
         } catch (e: Exception) {
-            wifiSsid = "Error"
+            wifiSsid = c.getString(R.string.connection_module_type_error)
         }
     }
 
@@ -108,16 +109,16 @@ class ConnectionModule : Module {
         val c = ctx ?: return
         try {
             val tm = c.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-            carrier = tm.networkOperatorName.takeIf { it.isNotEmpty() } ?: "Unknown"
+            carrier = tm.networkOperatorName.takeIf { it.isNotEmpty() } ?: c.getString(R.string.connection_module_unknown_carrier)
             val type = try { tm.dataNetworkType } catch (e: SecurityException) { TelephonyManager.NETWORK_TYPE_UNKNOWN }
             netType = when (type) {
-                TelephonyManager.NETWORK_TYPE_LTE -> "LTE"
-                TelephonyManager.NETWORK_TYPE_NR -> "5G"
+                TelephonyManager.NETWORK_TYPE_LTE -> c.getString(R.string.connection_module_network_type_lte)
+                TelephonyManager.NETWORK_TYPE_NR -> c.getString(R.string.connection_module_network_type_5g)
                 TelephonyManager.NETWORK_TYPE_HSDPA,
                 TelephonyManager.NETWORK_TYPE_HSUPA,
-                TelephonyManager.NETWORK_TYPE_HSPA -> "3G"
-                TelephonyManager.NETWORK_TYPE_EDGE -> "2G"
-                else -> "Unknown"
+                TelephonyManager.NETWORK_TYPE_HSPA -> c.getString(R.string.connection_module_network_type_3g)
+                TelephonyManager.NETWORK_TYPE_EDGE -> c.getString(R.string.connection_module_network_type_2g)
+                else -> c.getString(R.string.connection_module_network_type_unknown)
             }
         } catch (e: Exception) {
             carrier = "—"
@@ -126,44 +127,47 @@ class ConnectionModule : Module {
     }
 
     override fun compact(): String {
+        val c = ctx ?: return ""
         return when (connType) {
-            "WiFi" -> "WiFi $wifiRssi"
-            "Mobile" -> "$carrier $netType"
-            else -> "📡 $connType"
+            c.getString(R.string.connection_module_type_wifi) -> c.getString(R.string.connection_module_compact_wifi, wifiRssi)
+            c.getString(R.string.connection_module_type_mobile) -> c.getString(R.string.connection_module_compact_mobile, carrier, netType)
+            else -> c.getString(R.string.connection_module_compact_other, connType)
         }
     }
 
     override fun detail(): String {
+        val c = ctx ?: return ""
         val sb = StringBuilder()
         when (connType) {
-            "WiFi" -> {
-                sb.append("📡 WiFi: $wifiSsid ($wifiRssi)\n")
-                sb.append("   $wifiSpeed • $wifiFreq")
+            c.getString(R.string.connection_module_type_wifi) -> {
+                sb.append(c.getString(R.string.connection_module_detail_wifi, wifiSsid, wifiRssi))
+                sb.append(c.getString(R.string.connection_module_detail_wifi_stats, wifiSpeed, wifiFreq))
             }
-            "Mobile" -> {
-                sb.append("📡 Mobile: $carrier $netType")
+            c.getString(R.string.connection_module_type_mobile) -> {
+                sb.append(c.getString(R.string.connection_module_detail_mobile, carrier, netType))
             }
             else -> {
-                sb.append("📡 $connType")
+                sb.append(c.getString(R.string.connection_module_detail_other, connType))
             }
         }
-        if (vpnActive) sb.append("\n   VPN: Active")
+        if (vpnActive) sb.append(c.getString(R.string.connection_module_vpn_active))
         return sb.toString()
     }
 
     override fun dataPoints(): LinkedHashMap<String, String> {
+        val c = ctx ?: return LinkedHashMap()
         val d = LinkedHashMap<String, String>()
         d["conn.type"] = connType
-        if ("WiFi" == connType) {
+        if (c.getString(R.string.connection_module_type_wifi) == connType) {
             d["conn.ssid"] = wifiSsid
             d["conn.rssi"] = wifiRssi
             d["conn.speed"] = wifiSpeed
             d["conn.freq"] = wifiFreq
-        } else if ("Mobile" == connType) {
+        } else if (c.getString(R.string.connection_module_type_mobile) == connType) {
             d["conn.carrier"] = carrier
             d["conn.network"] = netType
         }
-        d["conn.vpn"] = if (vpnActive) "Active" else "None"
+        d["conn.vpn"] = if (vpnActive) c.getString(R.string.connection_module_vpn_status_active) else c.getString(R.string.connection_module_vpn_status_none)
         return d
     }
 

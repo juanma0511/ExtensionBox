@@ -24,11 +24,13 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.extensionbox.app.Prefs
+import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
 import com.extensionbox.app.ThemeHelper
 import com.extensionbox.app.ui.components.AppCard
@@ -122,9 +124,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 context.contentResolver.openOutputStream(it)?.use { os ->
                     os.write(jsonObject.toString(4).toByteArray())
                 }
-                Toast.makeText(context, "Settings exported", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.settings_exported, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.export_failed, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -135,10 +137,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 context.contentResolver.openInputStream(it)?.use { `is` ->
                     val json = BufferedReader(InputStreamReader(`is`)).readText()
                     Prefs.importJson(context, json)
-                    Toast.makeText(context, "Settings imported", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.settings_imported, Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Import failed", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.import_failed, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -151,7 +153,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         // --- Permissions Section ---
-        SettingsGroup(title = "Permissions", icon = Icons.Default.Security) {
+        SettingsGroup(title = stringResource(id = R.string.permissions), icon = Icons.Default.Security) {
             AppCard {
                 val currentAccess = sysAccess
                 
@@ -159,17 +161,17 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                     Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Checking system access...", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(id = R.string.checking_system_access), style = MaterialTheme.typography.bodyMedium)
                     }
                 } else {
                     SettingsItem(
-                        title = "System Access",
-                        summary = "Status: ${currentAccess.tier}\nTap to refresh",
+                        title = stringResource(id = R.string.system_access),
+                        summary = stringResource(id = R.string.system_access_summary, currentAccess.tier),
                         icon = if (currentAccess.isEnhanced()) Icons.Default.Verified else Icons.Default.AdminPanelSettings,
                         color = if (currentAccess.isEnhanced()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         trailing = {
                             IconButton(onClick = { refreshAccess() }) {
-                                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                                Icon(Icons.Default.Refresh, contentDescription = stringResource(id = R.string.refresh))
                             }
                         },
                         onClick = { refreshAccess() }
@@ -179,22 +181,22 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
                 SettingsItem(
-                    title = "Shizuku Service",
-                    summary = if (isShizukuRunning) "Service is active" else "Service not found",
+                    title = stringResource(id = R.string.shizuku_service),
+                    summary = if (isShizukuRunning) stringResource(id = R.string.service_is_active) else stringResource(id = R.string.service_not_found),
                     icon = Icons.Default.Terminal,
                     onClick = {
                         try {
                             val intent = context.packageManager.getLaunchIntentForPackage("moe.shizuku.privileged.api")
                             if (intent != null) context.startActivity(intent)
-                            else Toast.makeText(context, "Shizuku not found", Toast.LENGTH_SHORT).show()
+                            else Toast.makeText(context, R.string.shizuku_not_found, Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) { /* ignore */ }
                     }
                 )
 
                 if (isShizukuRunning && !shizukuPermissionGranted) {
                     SettingsItem(
-                        title = "Grant Permission",
-                        summary = "Allow system file access via Shizuku",
+                        title = stringResource(id = R.string.grant_permission),
+                        summary = stringResource(id = R.string.allow_system_file_access_via_shizuku),
                         icon = Icons.Default.VpnKey,
                         onClick = { Shizuku.requestPermission(1001) }
                     )
@@ -203,8 +205,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
                 SettingsItem(
-                    title = "Battery Optimization",
-                    summary = "Allow background monitoring",
+                    title = stringResource(id = R.string.battery_optimization),
+                    summary = stringResource(id = R.string.allow_background_monitoring),
                     icon = Icons.Default.BatterySaver,
                     onClick = {
                         try {
@@ -221,7 +223,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         }
 
         // --- Notification Section ---
-        SettingsGroup(title = "Notification", icon = Icons.Default.Notifications) {
+        SettingsGroup(title = stringResource(id = R.string.notification), icon = Icons.Default.Notifications) {
             AppCard {
                 var refreshRate by remember { mutableStateOf(Prefs.getLong(context, "notif_refresh_ms", 10000L).toFloat()) }
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -230,9 +232,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "Refresh Rate", style = MaterialTheme.typography.bodyMedium)
+                        Text(text = stringResource(id = R.string.refresh_rate), style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            text = "${refreshRate.toInt() / 1000}s",
+                            text = stringResource(id = R.string.refresh_rate_value, (refreshRate.toInt() / 1000)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
@@ -253,8 +255,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
                 var dismissible by remember { mutableStateOf(Prefs.getBool(context, "notif_dismissible", false)) }
                 SettingsToggle(
-                    title = "Dismissible",
-                    summary = "Allow swiping away to stop service",
+                    title = stringResource(id = R.string.dismissible),
+                    summary = stringResource(id = R.string.allow_swiping_away_to_stop_service),
                     icon = Icons.Default.Swipe,
                     checked = dismissible,
                     onCheckedChange = {
@@ -269,7 +271,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 var layoutStyle by remember { mutableStateOf(Prefs.getString(context, "notif_layout_style", "LIST") ?: "LIST") }
                 
                 SettingsItem(
-                    title = "Layout Style",
+                    title = stringResource(id = R.string.layout_style),
                     summary = layoutStyle,
                     icon = Icons.Default.Dashboard,
                     onClick = { layoutExpanded = true }
@@ -291,10 +293,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         }
 
         // --- Appearance Section ---
-        SettingsGroup(title = "Appearance", icon = Icons.Default.Palette) {
+        SettingsGroup(title = stringResource(id = R.string.appearance), icon = Icons.Default.Palette) {
             AppCard {
                 SettingsItem(
-                    title = "App Theme",
+                    title = stringResource(id = R.string.app_theme),
                     summary = ThemeHelper.NAMES[themeIndex.coerceIn(0, ThemeHelper.NAMES.size - 1)],
                     icon = Icons.Default.ColorLens,
                     onClick = { expanded = true }
@@ -318,8 +320,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                     
                     var dynamicColor by remember { mutableStateOf(Prefs.getBool(context, "dynamic_color", true)) }
                     SettingsToggle(
-                        title = "Dynamic Color",
-                        summary = "Use system wallpaper colors",
+                        title = stringResource(id = R.string.dynamic_color),
+                        summary = stringResource(id = R.string.use_system_wallpaper_colors),
                         icon = Icons.Default.InvertColors,
                         checked = dynamicColor,
                         onCheckedChange = {
@@ -333,8 +335,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
                 var expandCards by remember { mutableStateOf(Prefs.getBool(context, "dash_expand_cards", true)) }
                 SettingsToggle(
-                    title = "Expandable Cards",
-                    summary = "Show expansion toggle on dashboard",
+                    title = stringResource(id = R.string.expandable_cards),
+                    summary = stringResource(id = R.string.show_expansion_toggle_on_dashboard),
                     icon = Icons.Default.ViewStream,
                     checked = expandCards,
                     onCheckedChange = {
@@ -346,12 +348,12 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         }
 
         // --- Monitoring Section ---
-        SettingsGroup(title = "Monitoring", icon = Icons.Default.Analytics) {
+        SettingsGroup(title = stringResource(id = R.string.monitoring), icon = Icons.Default.Analytics) {
             AppCard {
                 var resetFull by remember { mutableStateOf(Prefs.getBool(context, "scr_reset_full", true)) }
                 SettingsToggle(
-                    title = "Reset on Full Charge",
-                    summary = "Clear stats when battery reaches 100%",
+                    title = stringResource(id = R.string.reset_on_full_charge),
+                    summary = stringResource(id = R.string.clear_stats_when_battery_reaches_100),
                     icon = Icons.Default.BatteryChargingFull,
                     checked = resetFull,
                     onCheckedChange = {
@@ -378,8 +380,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
                 var resetBoot by remember { mutableStateOf(Prefs.getBool(context, "scr_reset_boot", true)) }
                 SettingsToggle(
-                    title = "Reset on Reboot",
-                    summary = "Clear stats after system restart",
+                    title = stringResource(id = R.string.reset_on_reboot),
+                    summary = stringResource(id = R.string.clear_stats_after_system_restart),
                     icon = Icons.Default.RestartAlt,
                     checked = resetBoot,
                     onCheckedChange = {
@@ -392,8 +394,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
                 var contextAware by remember { mutableStateOf(Prefs.getBool(context, "notif_context_aware", true)) }
                 SettingsToggle(
-                    title = "Context Aware",
-                    summary = "Dynamic titles based on battery",
+                    title = stringResource(id = R.string.context_aware),
+                    summary = stringResource(id = R.string.dynamic_titles_based_on_battery),
                     icon = Icons.Default.NotificationAdd,
                     checked = contextAware,
                     onCheckedChange = {
@@ -406,8 +408,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
                 var notifCompact by remember { mutableStateOf(Prefs.getBool(context, "notif_compact_style", true)) }
                 SettingsToggle(
-                    title = "Compact Style",
-                    summary = "Simplified list in notification",
+                    title = stringResource(id = R.string.compact_style),
+                    summary = stringResource(id = R.string.simplified_list_in_notification),
                     icon = Icons.Default.Compress,
                     checked = notifCompact,
                     onCheckedChange = {
@@ -421,7 +423,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 var compactItems by remember { mutableStateOf(Prefs.getInt(context, "notif_compact_items", 4).toFloat()) }
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
                     Text(
-                        text = "Notification Items: ${compactItems.toInt()}",
+                        text = stringResource(id = R.string.notification_items, compactItems.toInt()),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -439,7 +441,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         }
 
         // --- Data Section ---
-        SettingsGroup(title = "Data & Backup", icon = Icons.Default.Storage) {
+        SettingsGroup(title = stringResource(id = R.string.data_backup), icon = Icons.Default.Storage) {
             AppCard {
                 var retentionDays by remember { mutableStateOf(Prefs.getDataRetentionDays(context).toFloat()) }
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -448,9 +450,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "Data Retention", style = MaterialTheme.typography.bodyMedium)
+                        Text(text = stringResource(id = R.string.data_retention), style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            text = "${retentionDays.toInt()} Days",
+                            text = stringResource(id = R.string.data_retention_days, retentionDays.toInt()),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
@@ -466,7 +468,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                         steps = 29
                     )
                     Text(
-                        text = "History older than this will be deleted daily.",
+                        text = stringResource(id = R.string.history_older_than_this_will_be_deleted_daily),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -475,14 +477,14 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
                 SettingsItem(
-                    title = "Export Settings",
-                    summary = "Save config to JSON",
+                    title = stringResource(id = R.string.export_settings),
+                    summary = stringResource(id = R.string.save_config_to_json),
                     icon = Icons.Default.UploadFile,
                     onClick = { exportLauncher.launch("extensionbox_config.json") }
                 )
                 SettingsItem(
-                    title = "Import Settings",
-                    summary = "Restore from JSON",
+                    title = stringResource(id = R.string.import_settings),
+                    summary = stringResource(id = R.string.restore_from_json),
                     icon = Icons.Default.FileDownload,
                     onClick = { importLauncher.launch(arrayOf("application/json")) }
                 )
@@ -490,13 +492,13 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
                 SettingsItem(
-                    title = "Reset All Data",
-                    summary = "Clear all stats and preferences",
+                    title = stringResource(id = R.string.reset_all_data),
+                    summary = stringResource(id = R.string.clear_all_stats_and_preferences),
                     icon = Icons.Default.DeleteSweep,
                     color = MaterialTheme.colorScheme.error,
                     onClick = {
                         Prefs.clearAll(context)
-                        Toast.makeText(context, "Data cleared", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, R.string.data_cleared, Toast.LENGTH_SHORT).show()
                     }
                 )
             }

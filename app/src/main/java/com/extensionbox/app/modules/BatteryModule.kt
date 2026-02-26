@@ -7,9 +7,15 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationCompat
 import com.extensionbox.app.Fmt
@@ -59,80 +65,80 @@ class BatteryModule : Module {
     private var offDrain = 0f
 
     override fun key(): String = "battery"
-    override fun name(): String = "Battery & Screen"
+    override fun name(): String = ctx?.getString(R.string.battery_module_name) ?: "Battery & Screen"
     override fun emoji(): String = "🔋"
-    override fun description(): String = "Battery health, power and screen usage"
+    override fun description(): String = ctx?.getString(R.string.battery_module_description) ?: "Battery health, power and screen usage"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running
-    @androidx.compose.runtime.Composable
-    override fun composableContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+    @Composable
+    override fun composableContent(ctx: Context, sys: SystemAccess) {
         // High level overview for the detail screen
-        val ma = if (currentMa >= 0) currentMa else kotlin.math.abs(currentMa)
-        val isCharge = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING
+        val ma = if (currentMa >= 0) currentMa else abs(currentMa)
+        val isCharge = status == BatteryManager.BATTERY_STATUS_CHARGING
         
         Column {
-            androidx.compose.material3.Text(
-                text = if (isCharge) "Current Input: ${ma}mA" else "Current Draw: ${ma}mA",
-                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                color = if (isCharge) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.error
+            Text(
+                text = if (isCharge) ctx.getString(R.string.battery_module_current_input, ma) else ctx.getString(R.string.battery_module_current_draw, ma),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isCharge) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
             )
-            Spacer(modifier = androidx.compose.ui.Modifier.height(4.dp))
-            androidx.compose.material3.Text(
-                text = "Screen On: ${Fmt.duration(getTotalOn())}",
-                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = ctx.getString(R.string.battery_module_screen_on, Fmt.duration(getTotalOn())),
+                style = MaterialTheme.typography.bodyMedium
             )
         }
     }
 
-    @androidx.compose.runtime.Composable
-    override fun settingsContent(ctx: android.content.Context, sys: com.extensionbox.app.SystemAccess) {
+    @Composable
+    override fun settingsContent(ctx: Context, sys: SystemAccess) {
         var interval by remember { mutableStateOf(Prefs.getInt(ctx, "bat_interval", 10000).toFloat()) }
         
         Column {
             SettingSlider(
-                label = "Update Interval",
+                label = ctx.getString(R.string.battery_module_update_interval),
                 value = interval,
                 valueRange = 1000f..60000f,
                 onValueChange = {
                     interval = it
                     Prefs.setInt(ctx, "bat_interval", it.toInt())
                 },
-                formatter = { "${it.toInt() / 1000}s" }
+                formatter = { ctx.getString(R.string.battery_module_interval_formatter, it.toInt() / 1000) }
             )
 
-            if (sys.rootProvider != com.extensionbox.app.SystemAccess.RootProvider.NONE) {
-                androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            if (sys.rootProvider != SystemAccess.RootProvider.NONE) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 var limitEn by remember { 
-                    mutableStateOf(com.extensionbox.app.Prefs.getBool(ctx, "bat_charge_limit_en", false)) 
+                    mutableStateOf(Prefs.getBool(ctx, "bat_charge_limit_en", false)) 
                 }
                 var limitVal by remember { 
-                    mutableStateOf(com.extensionbox.app.Prefs.getInt(ctx, "bat_charge_limit_val", 80).toFloat()) 
+                    mutableStateOf(Prefs.getInt(ctx, "bat_charge_limit_val", 80).toFloat()) 
                 }
 
                 Row(
-                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column(modifier = androidx.compose.ui.Modifier.weight(1f)) {
-                        androidx.compose.material3.Text(
-                            "Battery Charge Limiter",
-                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            ctx.getString(R.string.battery_module_charge_limiter),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold
                         )
-                        androidx.compose.material3.Text(
-                            "Stop charging at ${limitVal.toInt()}%",
-                            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                        Text(
+                            ctx.getString(R.string.battery_module_stop_charging_at, limitVal.toInt()),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    androidx.compose.material3.Switch(
+                    Switch(
                         checked = limitEn,
                         onCheckedChange = {
                             limitEn = it
-                            com.extensionbox.app.Prefs.setBool(ctx, "bat_charge_limit_en", it)
+                            Prefs.setBool(ctx, "bat_charge_limit_en", it)
                             if (!it) {
-                                kotlinx.coroutines.MainScope().launch(kotlinx.coroutines.Dispatchers.IO) {
+                                CoroutineScope(Dispatchers.IO).launch {
                                     sys.setChargingEnabled(true)
                                 }
                             }
@@ -141,12 +147,12 @@ class BatteryModule : Module {
                 }
 
                 if (limitEn) {
-                    Spacer(modifier = androidx.compose.ui.Modifier.height(8.dp))
-                    androidx.compose.material3.Slider(
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Slider(
                         value = limitVal,
                         onValueChange = {
                             limitVal = it
-                            com.extensionbox.app.Prefs.setInt(ctx, "bat_charge_limit_val", it.toInt())
+                            Prefs.setInt(ctx, "bat_charge_limit_val", it.toInt())
                         },
                         valueRange = 50f..100f,
                         steps = 49
@@ -154,11 +160,11 @@ class BatteryModule : Module {
                 }
             }
 
-            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
             var lowAlert by remember { mutableStateOf(Prefs.getBool(ctx, "bat_low_alert", true)) }
             SettingSwitch(
-                label = "Low Battery Alert",
+                label = ctx.getString(R.string.battery_module_low_battery_alert),
                 checked = lowAlert,
                 onCheckedChange = {
                     lowAlert = it
@@ -168,7 +174,7 @@ class BatteryModule : Module {
             if (lowAlert) {
                 var lowThresh by remember { mutableStateOf(Prefs.getInt(ctx, "bat_low_thresh", 15).toFloat()) }
                 SettingSlider(
-                    label = "Low Alert Threshold",
+                    label = ctx.getString(R.string.battery_module_low_alert_threshold),
                     value = lowThresh,
                     valueRange = 5f..50f,
                     onValueChange = {
@@ -180,7 +186,7 @@ class BatteryModule : Module {
             }
             var tempAlert by remember { mutableStateOf(Prefs.getBool(ctx, "bat_temp_alert", true)) }
             SettingSwitch(
-                label = "High Temp Alert",
+                label = ctx.getString(R.string.battery_module_high_temp_alert),
                 checked = tempAlert,
                 onCheckedChange = {
                     tempAlert = it
@@ -190,31 +196,40 @@ class BatteryModule : Module {
             if (tempAlert) {
                 var tempThresh by remember { mutableStateOf(Prefs.getInt(ctx, "bat_temp_thresh", 42).toFloat()) }
                 SettingSlider(
-                    label = "Temp Threshold",
+                    label = ctx.getString(R.string.battery_module_temp_threshold),
                     value = tempThresh,
                     valueRange = 30f..60f,
                     onValueChange = {
                         tempThresh = it
                         Prefs.setInt(ctx, "bat_temp_thresh", it.toInt())
                     },
-                    formatter = { "${it.toInt()}°C" }
+                    formatter = { ctx.getString(R.string.battery_module_temp_formatter, it.toInt()) }
                 )
             }
             
-            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
             var showDrain by remember { mutableStateOf(Prefs.getBool(ctx, "scr_show_drain", true)) }
             SettingSwitch(
-                label = "Show Screen Drain",
+                label = ctx.getString(R.string.battery_module_show_screen_drain),
                 checked = showDrain,
                 onCheckedChange = {
                     showDrain = it
                     Prefs.setBool(ctx, "scr_show_drain", it)
                 }
             )
+            var useUsage by remember { mutableStateOf(Prefs.getBool(ctx, "m_app_usage_enabled", true)) }
+            SettingSwitch(
+                label = ctx.getString(R.string.battery_module_show_app_usage),
+                checked = useUsage,
+                onCheckedChange = {
+                    useUsage = it
+                    Prefs.setBool(ctx, "m_app_usage_enabled", it)
+                }
+            )
             var timeLimit by remember { mutableStateOf(Prefs.getInt(ctx, "scr_time_limit", 0).toFloat()) }
             SettingSlider(
-                label = "Screen Time Limit",
+                label = ctx.getString(R.string.battery_module_screen_time_limit),
                 value = timeLimit,
                 valueRange = 0f..600f,
                 steps = 12,
@@ -222,7 +237,7 @@ class BatteryModule : Module {
                     timeLimit = it
                     Prefs.setInt(ctx, "scr_time_limit", it.toInt())
                 },
-                formatter = { if (it == 0f) "Disabled" else "${it.toInt()}m" }
+                formatter = { if (it == 0f) ctx.getString(R.string.battery_module_disabled) else ctx.getString(R.string.battery_module_time_limit_formatter, it.toInt()) }
             )
         }
     }
@@ -258,7 +273,7 @@ class BatteryModule : Module {
                     Intent.ACTION_SCREEN_OFF -> {
                         val now = android.os.SystemClock.elapsedRealtime()
                         val dt = now - periodStart
-                        val drain = kotlin.math.max(0, periodStartLevel - level).toFloat()
+                        val drain = abs(periodStartLevel - level).toFloat()
                         onAccMs += dt
                         onDrain += drain
                         screenOn = false
@@ -269,7 +284,7 @@ class BatteryModule : Module {
                     Intent.ACTION_SCREEN_ON -> {
                         val now = android.os.SystemClock.elapsedRealtime()
                         val dt = now - periodStart
-                        val drain = kotlin.math.max(0, periodStartLevel - level).toFloat()
+                        val drain = abs(periodStartLevel - level).toFloat()
                         offAccMs += dt
                         offDrain += drain
                         screenOn = true
@@ -359,55 +374,55 @@ class BatteryModule : Module {
         }
     }
 
-    override fun compact(): String = "$level% ${timeLeft()} • On:${Fmt.duration(getTotalOn())}"
+    override fun compact(): String = ctx?.getString(R.string.battery_module_compact_text, level, timeLeft(), Fmt.duration(getTotalOn())) ?: ""
 
     override fun detail(): String {
+        val c = ctx ?: return ""
         val ma = abs(currentMa)
         val w = ma * voltage / 1_000_000f
         val t = temp / 10f
 
         val sb = StringBuilder()
-        sb.append("🔋 $level% • ${ma}mA (${String.format(Locale.US, "%.1f", w)}W) • ${Fmt.temp(t)}\n")
+        sb.append(c.getString(R.string.battery_module_detail_line_1, level, ma, w, Fmt.temp(t)))
 
         if (sys?.isEnhanced() == true && realHealthPct > 0 && cycleCount >= 0) {
             val design = sys?.readDesignCapacity(ctx!!) ?: 0
-            sb.append("   Health: $realHealthPct% (${if (actualCap > 0) actualCap else "—"}/$design mAh) • $cycleCount cycles\n")
+            sb.append(c.getString(R.string.battery_module_health_enhanced, realHealthPct, if (actualCap > 0) actualCap.toString() else c.getString(R.string.battery_module_not_available), design, cycleCount))
         } else {
-            sb.append("   Health: ${healthStr()} • ${String.format(Locale.US, "%.2f", voltage / 1000f)}V • ${statusStr()}\n")
+            sb.append(c.getString(R.string.battery_module_health_basic, healthStr(), voltage / 1000f, statusStr()))
         }
 
         if (sys?.isEnhanced() == true && technology != null) {
-            sb.append("   ${String.format(Locale.US, "%.2f", voltage / 1000f)}V • $technology • ${statusStr()}\n")
+            sb.append(c.getString(R.string.battery_module_tech_info, voltage / 1000f, technology, statusStr()))
         }
 
         sb.append("   ").append(timeLeft())
         if (isCharging()) {
-            sb.append(" • ").append(chargeType())
+            sb.append(c.getString(R.string.battery_module_time_left_separator)).append(chargeType())
         }
         sb.append("\n")
 
         // Screen Time Info
         val on = getTotalOn()
         val off = getTotalOff()
-        sb.append("📱 Screen On: ${Fmt.duration(on)}")
+        sb.append(c.getString(R.string.battery_module_screen_on_label, Fmt.duration(on)))
 
-        val c = ctx
         if (c != null && Prefs.getBool(c, "scr_show_drain", true)) {
-            val curDrain = if (screenOn) kotlin.math.max(0, periodStartLevel - level).toFloat() else 0f
+            val curDrain = if (screenOn) abs(periodStartLevel - level).toFloat() else 0f
             val totalOnDrain = onDrain + curDrain
             val onDrainStr = String.format(Locale.US, "%.1f", totalOnDrain)
             val offDrainStr = String.format(Locale.US, "%.1f", offDrain)
             
-            sb.append(" • $onDrainStr%")
-            sb.append("\n   Screen Off: ${Fmt.duration(off)} • $offDrainStr%")
+            sb.append(c.getString(R.string.battery_module_screen_on_drain, onDrainStr))
+            sb.append(c.getString(R.string.battery_module_screen_off_label, Fmt.duration(off), offDrainStr))
             
             if (on > 60000) {
                 val rateOn = totalOnDrain / (on / 3600000f)
                 val rateStr = String.format(Locale.US, "%.1f", rateOn)
-                sb.append("\n   Active Drain: $rateStr%/h")
+                sb.append(c.getString(R.string.battery_module_active_drain, rateStr))
             }
         } else {
-            sb.append("\n   Screen Off: ${Fmt.duration(off)}")
+            sb.append(c.getString(R.string.battery_module_screen_off_basic, Fmt.duration(off)))
         }
 
         if (c != null && Prefs.getBool(c, "scr_show_yesterday", true)) {
@@ -415,8 +430,8 @@ class BatteryModule : Module {
             if (yOn > 0) {
                 val diff = on - yOn
                 val pct = (diff * 100 / yOn).toInt()
-                val cmp = if (pct <= 0) "↓${abs(pct)}% 🎉" else "↑$pct%"
-                sb.append("\n   Yesterday: ${Fmt.duration(yOn)} ($cmp)")
+                val cmp = if (pct <= 0) c.getString(R.string.battery_module_yesterday_comparison_good, abs(pct)) else c.getString(R.string.battery_module_yesterday_comparison_bad, pct)
+                sb.append(c.getString(R.string.battery_module_yesterday_label, Fmt.duration(yOn), cmp))
             }
         }
 
@@ -425,6 +440,7 @@ class BatteryModule : Module {
 
     override fun dataPoints(): LinkedHashMap<String, String> {
         val d = LinkedHashMap<String, String>()
+        val c = ctx ?: return d
         val ma = abs(currentMa)
         val w = ma * voltage / 1_000_000f
         val t = temp / 10f
@@ -443,10 +459,10 @@ class BatteryModule : Module {
         }
 
         d["battery.design_capacity"] = if (sys != null && ctx != null) "${sys?.readDesignCapacity(ctx!!)} mAh" else "$designCap mAh"
-        d["battery.technology"] = technology ?: "—"
-        d["battery.cycle_count"] = if (cycleCount >= 0) cycleCount.toString() else "—"
-        d["battery.real_health_percentage"] = if (realHealthPct > 0) "$realHealthPct%" else "—"
-        d["battery.actual_capacity"] = if (actualCap > 0) "$actualCap mAh" else "—"
+        d["battery.technology"] = technology ?: c.getString(R.string.battery_module_not_available)
+        d["battery.cycle_count"] = if (cycleCount >= 0) cycleCount.toString() else c.getString(R.string.battery_module_not_available)
+        d["battery.real_health_percentage"] = if (realHealthPct > 0) "$realHealthPct%" else c.getString(R.string.battery_module_not_available)
+        d["battery.actual_capacity"] = if (actualCap > 0) "$actualCap mAh" else c.getString(R.string.battery_module_not_available)
 
         d["screen.on_time"] = Fmt.duration(getTotalOn())
         d["screen.off_time"] = Fmt.duration(getTotalOff())
@@ -460,7 +476,7 @@ class BatteryModule : Module {
         val lowFired = Prefs.getBool(ctx, "bat_low_fired", false)
 
         if (lowEnabled && level <= lowThresh && !lowFired && !isCharging()) {
-            fireAlert(ctx, 2001, "🔴 Battery Low", "Battery at $level%. Charge your phone!")
+            fireAlert(ctx, 2001, ctx.getString(R.string.battery_module_low_alert_title), ctx.getString(R.string.battery_module_low_alert_content, level))
             vibrate(ctx, longArrayOf(0, 300, 100, 300)) // Warning double pulse
             Prefs.setBool(ctx, "bat_low_fired", true)
         }
@@ -474,7 +490,7 @@ class BatteryModule : Module {
         val currentTemp = temp / 10f
 
         if (tempEnabled && currentTemp >= tempThresh.toFloat() && !tempFired) {
-            fireAlert(ctx, 2002, "🔴 High Temperature", "Battery at ${Fmt.temp(currentTemp)}. Let your phone cool down!")
+            fireAlert(ctx, 2002, ctx.getString(R.string.battery_module_high_temp_alert_title), ctx.getString(R.string.battery_module_high_temp_alert_content, Fmt.temp(currentTemp)))
             vibrate(ctx, longArrayOf(0, 500, 200, 500)) // Stronger warning pulse
             Prefs.setBool(ctx, "bat_temp_fired", true)
         }
@@ -490,7 +506,7 @@ class BatteryModule : Module {
             val limitMs = limitMin * 60000L
 
             if (onMs >= limitMs && !fired) {
-                fireAlert(ctx, 2004, "🔴 Screen Time Limit", "Screen on for ${Fmt.duration(onMs)}. Take a break!")
+                fireAlert(ctx, 2004, ctx.getString(R.string.battery_module_screen_time_limit_title), ctx.getString(R.string.battery_module_screen_time_limit_content, Fmt.duration(onMs)))
                 Prefs.setBool(ctx, "scr_alert_fired", true)
             }
         }
@@ -510,7 +526,7 @@ class BatteryModule : Module {
                     val now = System.currentTimeMillis()
 
                     if (drop >= 5 && (now - lastFired) > 30 * 60 * 1000) { // 5% drop in 15 mins, fire once per 30 mins
-                        fireAlert(ctx, 2003, "🚨 Abnormal Discharge", "Battery dropped $drop% in last 15 mins!")
+                        fireAlert(ctx, 2003, ctx.getString(R.string.battery_module_abnormal_discharge_title), ctx.getString(R.string.battery_module_abnormal_discharge_content, drop))
                         Prefs.setLong(ctx, "bat_abnormal_last_fired", now)
                     }
                 }
@@ -535,57 +551,66 @@ class BatteryModule : Module {
     }
 
     private fun timeLeft(): String {
+        val c = ctx ?: return ctx?.getString(R.string.battery_module_not_available) ?: ""
         val ma = abs(currentMa)
-        if (ma < 5) return "—"
+        if (ma < 5) return c.getString(R.string.battery_module_not_available)
         val capacity = if (actualCap > 0) actualCap else designCap
         return if (isCharging()) {
             val neededMah = (100 - level) / 100f * capacity
             val hrs = neededMah / ma
-            "⚡Full in ${formatHours(hrs)}"
+            c.getString(R.string.battery_module_full_in, formatHours(hrs))
         } else {
             val remMah = level / 100f * capacity
             val hrs = remMah / ma
-            "${formatHours(hrs)} left"
+            c.getString(R.string.battery_module_time_left, formatHours(hrs))
         }
     }
 
     private fun formatHours(hrs: Float): String {
+        val c = ctx ?: return ""
         val m_hrs = if (hrs < 0) 0f else hrs
         val d = (m_hrs / 24).toInt()
         val h = (m_hrs % 24).toInt()
         val m = ((m_hrs * 60) % 60).toInt()
         return when {
-            d > 0 -> String.format(Locale.US, "%dd %dh", d, h)
-            h > 0 -> String.format(Locale.US, "%dh %dm", h, m)
-            else -> String.format(Locale.US, "%dm", m)
+            d > 0 -> String.format(Locale.US, c.getString(R.string.battery_module_hours_format_days), d, h)
+            h > 0 -> String.format(Locale.US, c.getString(R.string.battery_module_hours_format_hours), h, m)
+            else -> String.format(Locale.US, c.getString(R.string.battery_module_hours_format_minutes), m)
         }
     }
 
     private fun chargeType(): String {
+        val c = ctx ?: return ""
         val ma = abs(currentMa)
         return when {
-            ma > 3000 -> "Rapid"
-            ma > 1500 -> "Fast"
-            ma > 500 -> "Normal"
-            else -> "Slow"
+            ma > 3000 -> c.getString(R.string.battery_charge_type_rapid)
+            ma > 1500 -> c.getString(R.string.battery_charge_type_fast)
+            ma > 500 -> c.getString(R.string.battery_charge_type_normal)
+            else -> c.getString(R.string.battery_charge_type_slow)
         }
     }
 
-    private fun healthStr(): String = when (health) {
-        BatteryManager.BATTERY_HEALTH_GOOD -> "Good"
-        BatteryManager.BATTERY_HEALTH_OVERHEAT -> "Overheat!"
-        BatteryManager.BATTERY_HEALTH_DEAD -> "Dead"
-        BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "OverVolt"
-        BatteryManager.BATTERY_HEALTH_COLD -> "Cold"
-        else -> "Unknown"
+    private fun healthStr(): String {
+        val c = ctx ?: return ""
+        return when (health) {
+            BatteryManager.BATTERY_HEALTH_GOOD -> c.getString(R.string.battery_health_good)
+            BatteryManager.BATTERY_HEALTH_OVERHEAT -> c.getString(R.string.battery_health_overheat)
+            BatteryManager.BATTERY_HEALTH_DEAD -> c.getString(R.string.battery_health_dead)
+            BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> c.getString(R.string.battery_health_over_voltage)
+            BatteryManager.BATTERY_HEALTH_COLD -> c.getString(R.string.battery_health_cold)
+            else -> c.getString(R.string.battery_health_unknown)
+        }
     }
 
-    private fun statusStr(): String = when (status) {
-        BatteryManager.BATTERY_STATUS_CHARGING -> "Charging"
-        BatteryManager.BATTERY_STATUS_DISCHARGING -> "Discharging"
-        BatteryManager.BATTERY_STATUS_FULL -> "Full"
-        BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "Not charging"
-        else -> "Unknown"
+    private fun statusStr(): String {
+        val c = ctx ?: return ""
+        return when (status) {
+            BatteryManager.BATTERY_STATUS_CHARGING -> c.getString(R.string.battery_status_charging)
+            BatteryManager.BATTERY_STATUS_DISCHARGING -> c.getString(R.string.battery_status_discharging)
+            BatteryManager.BATTERY_STATUS_FULL -> c.getString(R.string.battery_status_full)
+            BatteryManager.BATTERY_STATUS_NOT_CHARGING -> c.getString(R.string.battery_status_not_charging)
+            else -> c.getString(R.string.battery_status_unknown)
+        }
     }
 
     private fun fireAlert(c: Context, id: Int, title: String, body: String) {

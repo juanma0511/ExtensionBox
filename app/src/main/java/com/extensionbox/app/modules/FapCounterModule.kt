@@ -16,9 +16,9 @@ class FapCounterModule : Module {
     private var running = false
 
     override fun key(): String = "fap"
-    override fun name(): String = "Fap Counter"
+    override fun name(): String = ctx?.getString(R.string.fap_counter_module_name) ?: "Fap Counter"
     override fun emoji(): String = "🍆"
-    override fun description(): String = "Self-monitoring counter & streak tracker"
+    override fun description(): String = ctx?.getString(R.string.fap_counter_module_description) ?: "Self-monitoring counter & streak tracker"
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running
     override fun priority(): Int = 100
@@ -89,14 +89,15 @@ class FapCounterModule : Module {
     private fun getDayOfYear(): Int = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
 
     override fun compact(): String {
-        val today = ctx?.let { Prefs.getInt(it, "fap_today", 0) } ?: 0
-        val streak = ctx?.let { Prefs.getInt(it, "fap_streak", 0) } ?: 0
-        val showStreak = ctx?.let { Prefs.getBool(it, "fap_show_streak", true) } ?: true
-        return if (streak > 0 && showStreak) "🍆$today 🔥${streak}d" else "🍆$today today"
+        val c = ctx ?: return ""
+        val today = Prefs.getInt(c, "fap_today", 0)
+        val streak = Prefs.getInt(c, "fap_streak", 0)
+        val showStreak = Prefs.getBool(c, "fap_show_streak", true)
+        return if (streak > 0 && showStreak) c.getString(R.string.fap_counter_module_compact_streak, today, streak) else c.getString(R.string.fap_counter_module_compact_today, today)
     }
 
     override fun detail(): String {
-        val c = ctx ?: return "🍆 No data"
+        val c = ctx ?: return ""
         val today = Prefs.getInt(c, "fap_today", 0)
         val streak = Prefs.getInt(c, "fap_streak", 0)
         val yesterday = Prefs.getInt(c, "fap_yesterday", 0)
@@ -108,11 +109,11 @@ class FapCounterModule : Module {
         val showAllTime = Prefs.getBool(c, "fap_show_all_time", true)
 
         val sb = StringBuilder()
-        sb.append("🍆 Today: $today")
-        if (streak > 0 && showStreak) sb.append(" • 🔥 Streak: ${streak}d clean")
-        if (showYesterday && yesterday >= 0) sb.append("\n   Yesterday: $yesterday")
-        sb.append("\n   Monthly: $monthly")
-        if (showAllTime) sb.append(" • Total: $allTime")
+        sb.append(c.getString(R.string.fap_counter_module_today, today))
+        if (streak > 0 && showStreak) sb.append(c.getString(R.string.fap_counter_module_streak, streak))
+        if (showYesterday && yesterday >= 0) sb.append(c.getString(R.string.fap_counter_module_yesterday, yesterday))
+        sb.append(c.getString(R.string.fap_counter_module_monthly, monthly))
+        if (showAllTime) sb.append(c.getString(R.string.fap_counter_module_total, allTime))
         return sb.toString()
     }
 
@@ -123,7 +124,7 @@ class FapCounterModule : Module {
         d["fap.today"] = Prefs.getInt(c, "fap_today", 0).toString()
         d["fap.yesterday"] = Prefs.getInt(c, "fap_yesterday", 0).toString()
         val streak = Prefs.getInt(c, "fap_streak", 0)
-        d["fap.streak"] = if (streak > 0) "$streak days 🔥" else "0"
+        d["fap.streak"] = if (streak > 0) c.getString(R.string.fap_counter_module_streak_days, streak) else "0"
         d["fap.monthly"] = Prefs.getInt(c, "fap_monthly", 0).toString()
         d["fap.all_time"] = Prefs.getInt(c, "fap_all_time", 0).toString()
         return d
@@ -137,7 +138,7 @@ class FapCounterModule : Module {
         val alertFired = Prefs.getBool(ctx, "fap_limit_fired", false)
 
         if (today >= dailyLimit && !alertFired) {
-            fireAlert(ctx, 2010, "🍆 Daily Limit Reached", "You've reached your daily limit of $dailyLimit. Take a break!")
+            fireAlert(ctx, 2010, ctx.getString(R.string.fap_counter_module_daily_limit_reached_title), ctx.getString(R.string.fap_counter_module_daily_limit_reached_content, dailyLimit))
             vibrate(ctx, longArrayOf(0, 200, 100, 200)) // Feedback pulse
             Prefs.setBool(ctx, "fap_limit_fired", true)
         }

@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
+import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
 import com.extensionbox.app.ui.components.SettingSlider
 import java.util.LinkedHashMap
@@ -29,9 +30,9 @@ class CpuModule : Module {
     private var gpuFreq = 0L
 
     override fun key(): String = "cpu"
-    override fun name(): String = "CPU"
+    override fun name(): String = ctx?.getString(R.string.cpu_module_name) ?: "CPU"
     override fun emoji(): String = "🧠"
-    override fun description(): String = "CPU usage, frequency and temperature"
+    override fun description(): String = ctx?.getString(R.string.cpu_module_description) ?: "CPU usage, frequency and temperature"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running
     override fun priority(): Int = 15
@@ -122,29 +123,30 @@ class CpuModule : Module {
 
     override fun compact(): String {
         val cpuStr = if (cpuUsage < 0f) "--" else "${cpuUsage.toInt()}%"
-        val tempStr = if (!cpuTemp.isNaN()) " ${Fmt.temp(cpuTemp)}" else ""
-        return "CPU: $cpuStr$tempStr"
+        val tempStr = if (!cpuTemp.isNaN()) ctx?.getString(R.string.cpu_module_temperature, Fmt.temp(cpuTemp)) else ""
+        return ctx?.getString(R.string.cpu_module_compact_text, cpuStr, tempStr) ?: ""
     }
 
     override fun detail(): String {
         val sb = StringBuilder()
+        val c = ctx ?: return ""
         val cpuStr = if (cpuUsage < 0f) "--" else String.format(Locale.US, "%.1f%%", cpuUsage)
-        sb.append("🧠 CPU Usage: $cpuStr")
+        sb.append(c.getString(R.string.cpu_module_usage, cpuStr))
         if (!cpuTemp.isNaN()) {
-            sb.append(" • ${Fmt.temp(cpuTemp)}")
+            sb.append(c.getString(R.string.cpu_module_temperature, Fmt.temp(cpuTemp)))
         }
         sb.append("\n")
         
         if (gpuLoad >= 0) {
-            sb.append("   GPU: $gpuLoad%")
-            if (gpuFreq > 0) sb.append(" • ${gpuFreq / 1_000_000}MHz")
+            sb.append(c.getString(R.string.cpu_module_gpu_load, gpuLoad))
+            if (gpuFreq > 0) sb.append(c.getString(R.string.cpu_module_gpu_freq, gpuFreq / 1_000_000))
             sb.append("\n")
         }
 
         if (coreFreqs.isNotEmpty()) {
-            sb.append("   Cores: ")
+            sb.append(c.getString(R.string.cpu_module_cores))
             coreFreqs.forEachIndexed { i, f ->
-                if (f > 0) sb.append("${f/1000} ")
+                if (f > 0) sb.append(c.getString(R.string.cpu_module_core_freq, f/1000))
             }
             sb.append("\n")
         }
@@ -179,7 +181,7 @@ class CpuModule : Module {
 
         Column {
             SettingSlider(
-                label = "Update Interval",
+                label = ctx.getString(R.string.cpu_module_update_interval),
                 value = interval,
                 onValueChange = { 
                     interval = it

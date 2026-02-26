@@ -6,6 +6,7 @@ import android.os.SystemClock
 import androidx.compose.runtime.*
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
+import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
 import com.extensionbox.app.ui.components.SettingSlider
 import java.util.LinkedHashMap
@@ -31,9 +32,9 @@ class NetworkModule : Module {
     private var sys: SystemAccess? = null
 
     override fun key(): String = "network"
-    override fun name(): String = "Network Speed"
+    override fun name(): String = ctx?.getString(R.string.network_module_name) ?: "Network Speed"
     override fun emoji(): String = "📶"
-    override fun description(): String = "Real-time download and upload speed"
+    override fun description(): String = ctx?.getString(R.string.network_module_description) ?: "Real-time download and upload speed"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running
     override fun priority(): Int = 40
@@ -125,13 +126,13 @@ class NetworkModule : Module {
         prevTime = now
     }
 
-    override fun compact(): String = "DL: ${Fmt.speed(dlSpeed)} UL: ${Fmt.speed(ulSpeed)}"
+    override fun compact(): String = ctx?.getString(R.string.network_module_compact_text, Fmt.speed(dlSpeed), Fmt.speed(ulSpeed)) ?: "DL: ${Fmt.speed(dlSpeed)} UL: ${Fmt.speed(ulSpeed)}"
 
     override fun detail(): String {
+        val c = ctx ?: return ""
         val sb = StringBuilder()
-        sb.append("📊 Network Traffic:\n")
-        sb.append("   ⬇ Download: ${Fmt.speed(dlSpeed)}\n")
-        sb.append("   ⬆ Upload:   ${Fmt.speed(ulSpeed)}\n")
+        sb.append(c.getString(R.string.network_module_download, Fmt.speed(dlSpeed)))
+        sb.append(c.getString(R.string.network_module_upload, Fmt.speed(ulSpeed)))
         
         val activeIfaces = interfaceStats.filter { it.key != "lo" && (it.value.first > 0 || it.value.second > 0) }
         if (activeIfaces.isNotEmpty()) {
@@ -163,14 +164,14 @@ class NetworkModule : Module {
             mutableStateOf(Prefs.getInt(ctx, "net_interval", 2000).toFloat()) 
         }
         SettingSlider(
-            label = "Update Interval",
+            label = ctx.getString(R.string.network_module_update_interval),
             value = interval,
             onValueChange = {
                 interval = it
                 Prefs.setInt(ctx, "net_interval", it.toInt())
             },
             valueRange = 1000f..30000f,
-            formatter = { "${it.toInt() / 1000}s" }
+            formatter = { ctx.getString(R.string.network_module_interval_formatter, it.toInt() / 1000) }
         )
     }
 

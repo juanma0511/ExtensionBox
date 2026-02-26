@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
+import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
 import com.extensionbox.app.ui.components.SettingSlider
 import com.extensionbox.app.ui.components.SettingSwitch
@@ -29,9 +30,9 @@ class SpeedTestModule : Module {
     private var lastTestTime = 0L
 
     override fun key(): String = "speedtest"
-    override fun name(): String = "Speed Test"
+    override fun name(): String = ctx?.getString(R.string.speed_test_module_name) ?: "Speed Test"
     override fun emoji(): String = "🏎"
-    override fun description(): String = "Periodic download and upload speed test"
+    override fun description(): String = ctx?.getString(R.string.speed_test_module_description) ?: "Periodic download and upload speed test"
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running
     override fun priority(): Int = 95
@@ -120,23 +121,23 @@ class SpeedTestModule : Module {
         return caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
     }
 
-    override fun compact(): String = if (testing) "Testing..." else "↓${Fmt.speed(downKbps * 128)}"
+    override fun compact(): String = if (testing) ctx?.getString(R.string.speed_test_module_testing) ?: "" else ctx?.getString(R.string.speed_test_module_compact_text, Fmt.speed(downKbps * 128)) ?: ""
 
     override fun detail(): String {
+        val c = ctx ?: return ""
         val sb = StringBuilder()
-        sb.append("🏎 Speed Test")
-        if (testing) sb.append(" (Running...)")
-        sb.append("\n   Download: ${Fmt.speed(downKbps * 128)}")
-        if (upKbps > 0) sb.append("\n   Upload: ${Fmt.speed(upKbps * 128)}")
+        sb.append(c.getString(R.string.speed_test_module_name))
+        if (testing) sb.append(c.getString(R.string.speed_test_module_running))
+        sb.append(c.getString(R.string.speed_test_module_download, Fmt.speed(downKbps * 128)))
+        if (upKbps > 0) sb.append(c.getString(R.string.speed_test_module_upload, Fmt.speed(upKbps * 128)))
         
-        val c = ctx
         if (c != null && Prefs.getBool(c, "spd_show_ping", true)) {
-            sb.append("\n   Latency: ${pingMs}ms")
+            sb.append(c.getString(R.string.speed_test_module_latency, pingMs))
         }
         
         if (lastTestTime > 0) {
             val ago = (System.currentTimeMillis() - lastTestTime) / 60000
-            sb.append("\n   Last test: ${ago}m ago")
+            sb.append(c.getString(R.string.speed_test_module_last_test, ago))
         }
         
         return sb.toString()
@@ -156,21 +157,21 @@ class SpeedTestModule : Module {
         
         Column {
             SettingSlider(
-                label = "Update Interval",
+                label = ctx.getString(R.string.speed_test_module_update_interval),
                 value = interval,
                 onValueChange = {
                     interval = it
                     Prefs.setInt(ctx, "spd_interval", it.toInt())
                 },
                 valueRange = 10000f..300000f,
-                formatter = { "${it.toInt() / 1000}s" }
+                formatter = { ctx.getString(R.string.speed_test_module_interval_formatter, it.toInt() / 1000) }
             )
 
             androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
             var autoTest by remember { mutableStateOf(Prefs.getBool(ctx, "spd_auto_test", true)) }
             SettingSwitch(
-                label = "Auto Test",
+                label = ctx.getString(R.string.speed_test_module_auto_test),
                 checked = autoTest,
                 onCheckedChange = {
                     autoTest = it
@@ -180,7 +181,7 @@ class SpeedTestModule : Module {
             if (autoTest) {
                 var freq by remember { mutableStateOf(Prefs.getInt(ctx, "spd_test_freq", 60).toFloat()) }
                 SettingSlider(
-                    label = "Test Frequency",
+                    label = ctx.getString(R.string.speed_test_module_test_frequency),
                     value = freq,
                     valueRange = 15f..240f,
                     steps = 15,
@@ -188,23 +189,23 @@ class SpeedTestModule : Module {
                         freq = it
                         Prefs.setInt(ctx, "spd_test_freq", it.toInt())
                     },
-                    formatter = { "${it.toInt()}m" }
+                    formatter = { ctx.getString(R.string.speed_test_module_frequency_formatter, it.toInt()) }
                 )
             }
             var dailyLimit by remember { mutableStateOf(Prefs.getInt(ctx, "spd_daily_limit", 10).toFloat()) }
             SettingSlider(
-                label = "Daily Test Limit",
+                label = ctx.getString(R.string.speed_test_module_daily_test_limit),
                 value = dailyLimit,
                 valueRange = 1f..100f,
                 onValueChange = {
                     dailyLimit = it
                     Prefs.setInt(ctx, "spd_daily_limit", it.toInt())
                 },
-                formatter = { "${it.toInt()} tests" }
+                formatter = { ctx.getString(R.string.speed_test_module_limit_formatter, it.toInt()) }
             )
             var wifiOnly by remember { mutableStateOf(Prefs.getBool(ctx, "spd_wifi_only", true)) }
             SettingSwitch(
-                label = "WiFi Only",
+                label = ctx.getString(R.string.speed_test_module_wifi_only),
                 checked = wifiOnly,
                 onCheckedChange = {
                     wifiOnly = it
@@ -213,7 +214,7 @@ class SpeedTestModule : Module {
             )
             var showPing by remember { mutableStateOf(Prefs.getBool(ctx, "spd_show_ping", true)) }
             SettingSwitch(
-                label = "Show Ping",
+                label = ctx.getString(R.string.speed_test_module_show_ping),
                 checked = showPing,
                 onCheckedChange = {
                     showPing = it
