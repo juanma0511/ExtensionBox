@@ -197,7 +197,7 @@ fun AppItem(
                 )
             }
 
-            // Action area
+            
             Column(modifier = Modifier.wrapContentWidth(), horizontalAlignment = Alignment.End) {
                 // uninstall button always shown; if app is system without permissions it's disabled
                 IconButton(onClick = onUninstall) {
