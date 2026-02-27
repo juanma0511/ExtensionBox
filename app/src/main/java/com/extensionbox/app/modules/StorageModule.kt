@@ -41,6 +41,7 @@ class StorageModule : Module {
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running
     override fun priority(): Int = 85
+    override fun hasSettings(): Boolean = true
 
     override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "sto_interval", 10000) } ?: 10000
 

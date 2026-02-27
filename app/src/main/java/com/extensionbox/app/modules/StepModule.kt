@@ -33,6 +33,7 @@ class StepModule : Module, SensorEventListener {
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running
     override fun priority(): Int = 90
+    override fun hasSettings(): Boolean = true
 
     override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "stp_interval", 30000) } ?: 30000
 

@@ -37,6 +37,7 @@ class CpuModule : Module {
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running
     override fun priority(): Int = 15
+    override fun hasSettings(): Boolean = true
 
     override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "cpu_interval", 5000) } ?: 5000
 

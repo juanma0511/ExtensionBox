@@ -68,9 +68,12 @@ class BatteryModule : Module {
     override fun name(): String = ctx?.getString(R.string.battery_module_name) ?: "Battery & Screen"
     override fun emoji(): String = "🔋"
     override fun description(): String = ctx?.getString(R.string.battery_module_description) ?: "Battery health, power and screen usage"
-    override fun defaultEnabled(): Boolean = true
-    override fun alive(): Boolean = running
-    @Composable
+        override fun defaultEnabled(): Boolean = true
+        override fun alive(): Boolean = running
+        override fun hasSettings(): Boolean = true
+    
+        @Composable
+    
     override fun composableContent(ctx: Context, sys: SystemAccess) {
         // High level overview for the detail screen
         val ma = if (currentMa >= 0) currentMa else abs(currentMa)

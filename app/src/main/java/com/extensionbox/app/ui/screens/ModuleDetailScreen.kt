@@ -111,7 +111,10 @@ fun ModuleDetailScreen(
             }
         }
 
-        if (module != null && sysAccess != null) {
+        val hasSettings = module?.hasSettings() == true
+        val isFap = moduleKey == "fap"
+
+        if (module != null && sysAccess != null && (hasSettings || isFap)) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
@@ -129,9 +132,11 @@ fun ModuleDetailScreen(
                         )
                     }
                     
-                    module.settingsContent(context, sysAccess)
+                    if (hasSettings) {
+                        module.settingsContent(context, sysAccess)
+                    }
                     
-                    if (moduleKey == "fap") {
+                    if (isFap) {
                         Button(
                             onClick = {
                                 val intent = Intent(context, MonitorService::class.java)

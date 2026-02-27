@@ -337,6 +337,7 @@
     <string name="real_time_metrics">Real-time Metrics</string>
     <string name="extension_settings">Extension Settings</string>
     <string name="log_action">Log Action</string>
+    <string name="no_available_settings">No available settings for this extension</string>
     <string name="extensionbox_config_json" translatable="false">extensionbox_config.json</string>
     <string name="application_json" translatable="false">application/json</string>
 </resources>

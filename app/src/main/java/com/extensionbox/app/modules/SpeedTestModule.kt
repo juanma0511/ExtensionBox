@@ -36,6 +36,7 @@ class SpeedTestModule : Module {
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running
     override fun priority(): Int = 95
+    override fun hasSettings(): Boolean = true
 
     override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "spd_interval", 60000) } ?: 60000
 

@@ -38,6 +38,7 @@ class NetworkModule : Module {
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running
     override fun priority(): Int = 40
+    override fun hasSettings(): Boolean = true
 
     override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "net_interval", 3000) } ?: 3000
 

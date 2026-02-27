@@ -22,6 +22,11 @@ interface Module {
     fun reset() {}
 
     /**
+     * Whether this module has configuration settings.
+     */
+    fun hasSettings(): Boolean = false
+
+    /**
      * Optional Compose UI content for the module's dashboard card.
      */
     @androidx.compose.runtime.Composable
