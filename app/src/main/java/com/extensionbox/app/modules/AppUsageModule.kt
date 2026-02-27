@@ -31,7 +31,6 @@ class AppUsageModule : Module {
 
     override fun key(): String = "app_usage"
     override fun name(): String = ctx?.getString(R.string.app_usage_module_name) ?: "App Usage"
-    override fun emoji(): String = "📱"
     override fun description(): String = ctx?.getString(R.string.app_usage_module_description) ?: "Time spent in each application"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running

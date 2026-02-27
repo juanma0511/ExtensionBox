@@ -33,7 +33,6 @@ class NetworkModule : Module {
 
     override fun key(): String = "network"
     override fun name(): String = ctx?.getString(R.string.network_module_name) ?: "Network Speed"
-    override fun emoji(): String = "📶"
     override fun description(): String = ctx?.getString(R.string.network_module_description) ?: "Real-time download and upload speed"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running

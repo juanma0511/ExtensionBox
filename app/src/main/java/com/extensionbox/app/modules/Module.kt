@@ -7,7 +7,6 @@ import java.util.LinkedHashMap
 interface Module {
     fun key(): String
     fun name(): String
-    fun emoji(): String
     fun description(): String
     fun defaultEnabled(): Boolean
     fun start(ctx: Context, sys: SystemAccess)

@@ -32,7 +32,6 @@ class RamModule : Module {
 
     override fun key(): String = "ram"
     override fun name(): String = ctx?.getString(R.string.ram_module_name) ?: "RAM"
-    override fun emoji(): String = "🧠"
     override fun description(): String = ctx?.getString(R.string.ram_module_description) ?: "Memory status and running processes"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running

@@ -28,7 +28,6 @@ class StepModule : Module, SensorEventListener {
 
     override fun key(): String = "steps"
     override fun name(): String = ctx?.getString(R.string.step_module_name) ?: "Step Counter"
-    override fun emoji(): String = "👣"
     override fun description(): String = ctx?.getString(R.string.step_module_description) ?: "Steps and distance"
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running

@@ -32,7 +32,6 @@ class CpuModule : Module {
 
     override fun key(): String = "cpu"
     override fun name(): String = ctx?.getString(R.string.cpu_module_name) ?: "CPU"
-    override fun emoji(): String = "🧠"
     override fun description(): String = ctx?.getString(R.string.cpu_module_description) ?: "CPU usage, frequency and temperature"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running

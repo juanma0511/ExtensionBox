@@ -66,7 +66,6 @@ class BatteryModule : Module {
 
     override fun key(): String = "battery"
     override fun name(): String = ctx?.getString(R.string.battery_module_name) ?: "Battery & Screen"
-    override fun emoji(): String = "🔋"
     override fun description(): String = ctx?.getString(R.string.battery_module_description) ?: "Battery health, power and screen usage"
         override fun defaultEnabled(): Boolean = true
         override fun alive(): Boolean = running

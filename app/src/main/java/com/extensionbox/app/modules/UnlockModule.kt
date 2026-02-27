@@ -27,7 +27,6 @@ class UnlockModule : Module {
 
     override fun key(): String = "unlock"
     override fun name(): String = ctx?.getString(R.string.unlock_module_name) ?: "Unlock Counter"
-    override fun emoji(): String = "🔓"
     override fun description(): String = ctx?.getString(R.string.unlock_module_description) ?: "Daily unlocks, detox tracking"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running
