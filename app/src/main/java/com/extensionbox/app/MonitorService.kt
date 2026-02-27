@@ -436,7 +436,7 @@ class MonitorService : Service() {
                     val m1 = alive[i]
                     val m2 = if (i + 1 < alive.size) alive[i + 1] else null
                     if (m2 != null) {
-                        lines.add("${m1.name().take(10)}: ${m1.compact()} | ${m2.name().take(10)}: ${m2.compact()}")
+                        lines.add("${m1.name().take(10)}: ${m1.compact()} • ${m2.name().take(10)}: ${m2.compact()}")
                     } else {
                         lines.add("${m1.name()}: ${m1.compact()}")
                     }
@@ -494,9 +494,9 @@ class MonitorService : Service() {
 
         val body = StringBuilder()
         body.append("Screen: ${screenH}h ${screenM}m")
-        body.append(" | $unlocks unlocks")
-        if (steps > 0) body.append(" | $steps steps")
-        if (habs > 0) body.append(" | Habit Tracker: $habs")
+        body.append(" • $unlocks unlocks")
+        if (steps > 0) body.append(" • $steps steps")
+        if (habs > 0) body.append(" • Habit Tracker: $habs")
 
         val ydUnlocks = Prefs.getInt(this, "ulk_yesterday", 0)
         if (ydUnlocks > 0) {

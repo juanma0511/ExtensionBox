@@ -25,8 +25,8 @@
     <string name="contributor">Contributor</string>
     <string name="data_usage_module_name">Data Usage</string>
     <string name="data_usage_module_description">Daily &amp; monthly, WiFi &amp; mobile</string>
-    <string name="data_usage_module_compact_text">Today:%1$s</string>
-    <string name="data_usage_module_today_with_breakdown">Today: %1$s (W:%2$s M:%3$s)\n</string>
+    <string name="data_usage_module_compact_text">Today: %1$s</string>
+    <string name="data_usage_module_today_with_breakdown">Today: %1$s (W: %2$s • M: %3$s)\n</string>
     <string name="data_usage_module_today_simple">Today: %1$s\n</string>
     <string name="data_usage_module_month">\u0020\u0020\u0020Month: %1$s</string>
     <string name="data_usage_module_month_plan_usage">\u0020/ %1$s (%2$.1f%%)</string>
@@ -84,7 +84,7 @@
     <string name="step_module_show_yesterday">Show Yesterday</string>
     <string name="sleep_module_name">Deep Sleep</string>
     <string name="sleep_module_description">CPU sleep vs awake ratio</string>
-    <string name="sleep_module_compact_text">Sleep:%1$d%%</string>
+    <string name="sleep_module_compact_text">Sleep: %1$d%%</string>
     <string name="sleep_module_deep_sleep">Deep Sleep: %1$s (%2$.1f%%)\n</string>
     <string name="sleep_module_awake">\u0020\u0020\u0020Awake: %1$s (%2$.1f%%)</string>
     <string name="sleep_module_update_interval">Update Interval</string>
@@ -130,7 +130,7 @@
     <string name="battery_module_screen_time_limit">Screen Time Limit</string>
     <string name="battery_module_disabled">Disabled</string>
     <string name="battery_module_time_limit_formatter">%1$dm</string>
-    <string name="battery_module_compact_text">%1$d%% %2$s • On:%3$s</string>
+    <string name="battery_module_compact_text">%2$s • On: %3$s</string>
     <string name="battery_module_detail_line_1">Battery: %1$d%% • %2$dmA (%3$.1fW) • %4$s\n</string>
     <string name="battery_module_health_enhanced">\u0020\u0020\u0020Health: %1$d%% (%2$s/%3$d mAh) • %4$d cycles\n</string>
     <string name="battery_module_health_basic">\u0020\u0020\u0020Health: %1$s • %2$.2fV • %3$s\n</string>
@@ -214,8 +214,8 @@
     <string name="connection_module_vpn_status_none">None</string>
     <string name="hab_counter_module_name">Habit Tracker</string>
     <string name="hab_counter_module_description">Self-monitoring counter &amp; streak tracker</string>
-    <string name="hab_counter_module_compact_streak">Count:%1$d Streak:%2$dd</string>
-    <string name="hab_counter_module_compact_today">Count:%1$d today</string>
+    <string name="hab_counter_module_compact_streak">Count: %1$d • Streak: %2$dd</string>
+    <string name="hab_counter_module_compact_today">Count: %1$d</string>
     <string name="hab_counter_module_no_data">No data</string>
     <string name="hab_counter_module_today">Today: %1$d</string>
     <string name="hab_counter_module_streak"> • Streak: %1$dd clean</string>
@@ -227,7 +227,7 @@
     <string name="hab_counter_module_daily_limit_reached_content">You\'ve reached your daily limit of %1$d. Take a break!</string>
     <string name="network_module_name">Network Speed</string>
     <string name="network_module_description">Real-time download and upload speed</string>
-    <string name="network_module_compact_text">Down:%1$s Up:%2$s</string>
+    <string name="network_module_compact_text">D: %1$s • U: %2$s</string>
     <string name="network_module_download">Download: %1$s\n</string>
     <string name="network_module_upload">\u0020\u0020\u0020Upload: %1$s\n</string>
     <string name="network_module_interfaces">\u0020\u0020\u0020Interfaces:\n</string>

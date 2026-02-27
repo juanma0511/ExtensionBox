@@ -139,7 +139,7 @@ class NetworkModule : Module {
             sb.append("\n   Active Interfaces:\n")
             activeIfaces.forEach { (name, stats) ->
                 sb.append("   • $name:\n")
-                sb.append("     RX: ${Fmt.bytes(stats.first)} | TX: ${Fmt.bytes(stats.second)}\n")
+                sb.append("     RX: ${Fmt.bytes(stats.first)} • TX: ${Fmt.bytes(stats.second)}\n")
             }
         }
         return sb.toString().trim()
