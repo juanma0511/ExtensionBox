@@ -26,12 +26,12 @@ class UnlockModule : Module {
     private var lastUnlockTime = 0L
 
     override fun key(): String = "unlock"
-    override fun name(): String = "Unlock Counter"
-    override fun emoji(): String = "🔓"
-    override fun description(): String = "Daily unlocks, detox tracking"
+    override fun name(): String = ctx?.getString(R.string.unlock_module_name) ?: "Unlock Counter"
+    override fun description(): String = ctx?.getString(R.string.unlock_module_description) ?: "Daily unlocks, detox tracking"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running
     override fun priority(): Int = 60
+    override fun hasSettings(): Boolean = true
 
     override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "ulk_interval", 10000) } ?: 10000
 
@@ -71,15 +71,16 @@ class UnlockModule : Module {
         ctx?.let { dailyUnlocks = Prefs.getInt(it, "ulk_today", 0) }
     }
 
-    override fun compact(): String = "🔓$dailyUnlocks"
+    override fun compact(): String = ctx?.getString(R.string.unlock_module_compact_text, dailyUnlocks) ?: ""
 
     override fun detail(): String {
-        val y = ctx?.let { Prefs.getInt(it, "ulk_yesterday", 0) } ?: 0
-        var s = "🔓 Today: $dailyUnlocks unlocks"
+        val c = ctx ?: return ""
+        val y = c.let { Prefs.getInt(it, "ulk_yesterday", 0) } ?: 0
+        var s = c.getString(R.string.unlock_module_today, dailyUnlocks)
         if (y > 0) {
             val diff = dailyUnlocks - y
             val pct = if (y > 0) kotlin.math.abs(diff * 100 / y) else 0
-            val cmp = if (diff <= 0) "↓$pct% less than yesterday!" else "↑$pct% more than yesterday"
+            val cmp = if (diff <= 0) c.getString(R.string.unlock_module_less_than_yesterday, pct) else c.getString(R.string.unlock_module_more_than_yesterday, pct)
             s += "\n   $cmp"
         }
         return s
@@ -98,7 +99,7 @@ class UnlockModule : Module {
         
         Column {
             SettingSlider(
-                label = "Update Interval",
+                label = ctx.getString(R.string.unlock_module_update_interval),
                 value = interval,
                 onValueChange = {
                     interval = it
@@ -112,19 +113,19 @@ class UnlockModule : Module {
 
             var ulLimit by remember { mutableStateOf(Prefs.getInt(ctx, "ulk_daily_limit", 0).toFloat()) }
             SettingSlider(
-                label = "Daily Unlock Limit",
+                label = ctx.getString(R.string.unlock_module_daily_unlock_limit),
                 value = ulLimit,
                 valueRange = 0f..200f,
                 onValueChange = {
                     ulLimit = it
                     Prefs.setInt(ctx, "ulk_daily_limit", it.toInt())
                 },
-                formatter = { if (it == 0f) "No Limit" else "${it.toInt()} times" }
+                formatter = { if (it == 0f) ctx.getString(R.string.unlock_module_no_limit) else "${it.toInt()}${ctx.getString(R.string.unlock_module_times_unit)}" }
             )
             if (ulLimit > 0) {
                 var limitAlert by remember { mutableStateOf(Prefs.getBool(ctx, "ulk_limit_alert", true)) }
                 SettingSwitch(
-                    label = "Alert on Limit",
+                    label = ctx.getString(R.string.unlock_module_alert_on_limit),
                     checked = limitAlert,
                     onCheckedChange = {
                         limitAlert = it
@@ -134,14 +135,14 @@ class UnlockModule : Module {
             }
             var debounce by remember { mutableStateOf(Prefs.getInt(ctx, "ulk_debounce", 5000).toFloat()) }
             SettingSlider(
-                label = "Debounce",
+                label = ctx.getString(R.string.unlock_module_debounce),
                 value = debounce,
                 valueRange = 0f..30000f,
                 onValueChange = {
                     debounce = it
                     Prefs.setInt(ctx, "ulk_debounce", it.toInt())
                 },
-                formatter = { "${it.toInt()} ms" }
+                formatter = { "${it.toInt()}${ctx.getString(R.string.unlock_module_ms_unit)}" }
             )
         }
     }
@@ -156,8 +157,8 @@ class UnlockModule : Module {
                     val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                     nm.notify(2006, NotificationCompat.Builder(ctx, "ebox_alerts")
                         .setSmallIcon(R.drawable.ic_notif)
-                        .setContentTitle("📵 Unlock Limit Reached")
-                        .setContentText("You've unlocked your phone $dailyUnlocks times today.")
+                        .setContentTitle(ctx.getString(R.string.unlock_module_limit_reached_title))
+                        .setContentText(ctx.getString(R.string.unlock_module_limit_reached_content, dailyUnlocks))
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
                         .setAutoCancel(true).build())
                 } catch (ignored: Exception) {

@@ -5,6 +5,7 @@ import android.os.SystemClock
 import androidx.compose.runtime.*
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
+import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
 import com.extensionbox.app.ui.components.SettingSlider
 import java.util.LinkedHashMap
@@ -19,12 +20,12 @@ class SleepModule : Module {
     private var uptimeStart: Long = 0
 
     override fun key(): String = "sleep"
-    override fun name(): String = "Deep Sleep"
-    override fun emoji(): String = "😴"
-    override fun description(): String = "CPU sleep vs awake ratio"
+    override fun name(): String = ctx?.getString(R.string.sleep_module_name) ?: "Deep Sleep"
+    override fun description(): String = ctx?.getString(R.string.sleep_module_description) ?: "CPU sleep vs awake ratio"
     override fun defaultEnabled(): Boolean = true
     override fun alive(): Boolean = running
     override fun priority(): Int = 30
+    override fun hasSettings(): Boolean = true
 
     override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "slp_interval", 30000) } ?: 30000
 
@@ -48,15 +49,16 @@ class SleepModule : Module {
         return if (el > 0) ds * 100f / el else 0f
     }
 
-    override fun compact(): String = "Sleep:${deepPct().toInt()}%"
+    override fun compact(): String = ctx?.getString(R.string.sleep_module_compact_text, deepPct().toInt()) ?: ""
 
     override fun detail(): String {
+        val c = ctx ?: return ""
         val el = SystemClock.elapsedRealtime() - elapsedStart
         val up = SystemClock.uptimeMillis() - uptimeStart
         val ds = max(0, el - up)
         val pct = deepPct()
-        return "😴 Deep Sleep: ${Fmt.duration(ds)} (${String.format(Locale.US, "%.1f%%", pct)})\n" +
-               "   Awake: ${Fmt.duration(up)} (${String.format(Locale.US, "%.1f%%", 100 - pct)})"
+        return c.getString(R.string.sleep_module_deep_sleep, Fmt.duration(ds), pct) +
+               c.getString(R.string.sleep_module_awake, Fmt.duration(up), 100 - pct)
     }
 
     override fun dataPoints(): LinkedHashMap<String, String> {
@@ -78,14 +80,14 @@ class SleepModule : Module {
             mutableStateOf(Prefs.getInt(ctx, "slp_interval", 30000).toFloat()) 
         }
         SettingSlider(
-            label = "Update Interval",
+            label = ctx.getString(R.string.sleep_module_update_interval),
             value = interval,
             onValueChange = {
                 interval = it
                 Prefs.setInt(ctx, "slp_interval", it.toInt())
             },
             valueRange = 5000f..300000f,
-            formatter = { if (it >= 60000f) "${it.toInt() / 60000}m" else "${it.toInt() / 1000}s" }
+            formatter = { if (it >= 60000f) ctx.getString(R.string.sleep_module_interval_formatter_minutes, it.toInt() / 60000) else ctx.getString(R.string.sleep_module_interval_formatter_seconds, it.toInt() / 1000) }
         )
     }
 

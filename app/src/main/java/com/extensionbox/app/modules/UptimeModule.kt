@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.SystemClock
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
+import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -18,9 +19,8 @@ class UptimeModule : Module {
     private var bootTimestamp: Long = 0
 
     override fun key(): String = "uptime"
-    override fun name(): String = "Uptime"
-    override fun emoji(): String = "⏱"
-    override fun description(): String = "Device uptime since boot"
+    override fun name(): String = ctx?.getString(R.string.uptime_module_name) ?: "Uptime"
+    override fun description(): String = ctx?.getString(R.string.uptime_module_description) ?: "Device uptime since boot"
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running
     override fun priority(): Int = 95
@@ -47,14 +47,15 @@ class UptimeModule : Module {
 
     override fun tick() {}
 
-    override fun compact(): String = "⏱${Fmt.duration(SystemClock.elapsedRealtime())}"
+    override fun compact(): String = ctx?.getString(R.string.uptime_module_compact_text, Fmt.duration(SystemClock.elapsedRealtime())) ?: ""
 
     override fun detail(): String {
+        val c = ctx ?: return ""
         val bootStr = SimpleDateFormat("MMM dd, HH:mm", Locale.US).format(Date(bootTimestamp))
-        val reboots = ctx?.let { Prefs.getInt(it, "upt_reboot_count", 0) } ?: 0
-        return "⏱ Uptime: ${Fmt.duration(SystemClock.elapsedRealtime())}\n" +
-               "   Last boot: $bootStr\n" +
-               "   Reboots tracked: $reboots"
+        val reboots = c.let { Prefs.getInt(it, "upt_reboot_count", 0) } ?: 0
+        return c.getString(R.string.uptime_module_uptime, Fmt.duration(SystemClock.elapsedRealtime())) +
+               c.getString(R.string.uptime_module_last_boot, bootStr) +
+               c.getString(R.string.uptime_module_reboots_tracked, reboots)
     }
 
     override fun dataPoints(): LinkedHashMap<String, String> {

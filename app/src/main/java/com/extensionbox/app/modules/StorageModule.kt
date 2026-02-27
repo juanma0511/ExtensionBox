@@ -35,12 +35,12 @@ class StorageModule : Module {
     private var prevTime = 0L
 
     override fun key(): String = "storage"
-    override fun name(): String = "Storage"
-    override fun emoji(): String = "💾"
-    override fun description(): String = "Internal storage usage"
+    override fun name(): String = ctx?.getString(R.string.storage_module_name) ?: "Storage"
+    override fun description(): String = ctx?.getString(R.string.storage_module_description) ?: "Internal storage usage"
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running
     override fun priority(): Int = 85
+    override fun hasSettings(): Boolean = true
 
     override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "sto_interval", 10000) } ?: 10000
 
@@ -91,15 +91,16 @@ class StorageModule : Module {
         }
     }
 
-    override fun compact(): String = "💾${Fmt.bytes(intUsed)}/${Fmt.bytes(intTotal)}"
+    override fun compact(): String = ctx?.getString(R.string.storage_module_compact_text, Fmt.bytes(intUsed), Fmt.bytes(intTotal)) ?: ""
 
     override fun detail(): String {
+        val c = ctx ?: return ""
         val pct = if (intTotal > 0) intUsed * 100f / intTotal else 0f
         val sb = StringBuilder()
-        sb.append("💾 Internal: ${Fmt.bytes(intUsed)} / ${Fmt.bytes(intTotal)} (${String.format(Locale.US, "%.1f%%", pct)})\n")
-        sb.append("   Free: ${Fmt.bytes(intFree)}\n")
+        sb.append(c.getString(R.string.storage_module_internal, Fmt.bytes(intUsed), Fmt.bytes(intTotal), pct))
+        sb.append(c.getString(R.string.storage_module_free, Fmt.bytes(intFree)))
         if (readSpeed > 0 || writeSpeed > 0) {
-            sb.append("   I/O: R ${Fmt.speed(readSpeed)} • W ${Fmt.speed(writeSpeed)}")
+            sb.append(c.getString(R.string.storage_module_io, Fmt.speed(readSpeed), Fmt.speed(writeSpeed)))
         }
         return sb.toString().trim()
     }
@@ -124,21 +125,21 @@ class StorageModule : Module {
         
         Column {
             SettingSlider(
-                label = "Update Interval",
+                label = ctx.getString(R.string.storage_module_update_interval),
                 value = interval,
                 onValueChange = {
                     interval = it
                     Prefs.setInt(ctx, "sto_interval", it.toInt())
                 },
                 valueRange = 10000f..600000f,
-                formatter = { if (it >= 60000f) "${it.toInt() / 60000}m" else "${it.toInt() / 1000}s" }
+                formatter = { if (it >= 60000f) ctx.getString(R.string.storage_module_interval_formatter_minutes, it.toInt() / 60000) else ctx.getString(R.string.storage_module_interval_formatter_seconds, it.toInt() / 1000) }
             )
 
             androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
             var stoAlert by remember { mutableStateOf(Prefs.getBool(ctx, "sto_low_alert", true)) }
             SettingSwitch(
-                label = "Low Storage Alert",
+                label = ctx.getString(R.string.storage_module_low_storage_alert),
                 checked = stoAlert,
                 onCheckedChange = {
                     stoAlert = it
@@ -148,14 +149,14 @@ class StorageModule : Module {
             if (stoAlert) {
                 var stoThresh by remember { mutableStateOf(Prefs.getInt(ctx, "sto_low_thresh_mb", 1000).toFloat()) }
                 SettingSlider(
-                    label = "Low Alert Threshold",
+                    label = ctx.getString(R.string.storage_module_low_alert_threshold),
                     value = stoThresh,
                     valueRange = 100f..5000f,
                     onValueChange = {
                         stoThresh = it
                         Prefs.setInt(ctx, "sto_low_thresh_mb", it.toInt())
                     },
-                    formatter = { "${it.toInt()} MB" }
+                    formatter = { ctx.getString(R.string.storage_module_threshold_formatter, it.toInt()) }
                 )
             }
         }
@@ -172,8 +173,8 @@ class StorageModule : Module {
                 val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 nm.notify(2007, NotificationCompat.Builder(ctx, "ebox_alerts")
                     .setSmallIcon(R.drawable.ic_notif)
-                    .setContentTitle("🔴 Low Storage")
-                    .setContentText("Only " + Fmt.bytes(intFree) + " remaining")
+                    .setContentTitle(ctx.getString(R.string.storage_module_low_storage_title))
+                    .setContentText(ctx.getString(R.string.storage_module_low_storage_content, Fmt.bytes(intFree)))
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true).build())
             } catch (ignored: Exception) {

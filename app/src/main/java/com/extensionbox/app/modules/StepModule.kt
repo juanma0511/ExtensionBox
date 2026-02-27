@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.extensionbox.app.Fmt
 import com.extensionbox.app.Prefs
+import com.extensionbox.app.R
 import com.extensionbox.app.SystemAccess
 import com.extensionbox.app.ui.components.SettingSlider
 import com.extensionbox.app.ui.components.SettingSwitch
@@ -26,12 +27,12 @@ class StepModule : Module, SensorEventListener {
     private var startSteps = -1L
 
     override fun key(): String = "steps"
-    override fun name(): String = "Step Counter"
-    override fun emoji(): String = "👣"
-    override fun description(): String = "Steps and distance"
+    override fun name(): String = ctx?.getString(R.string.step_module_name) ?: "Step Counter"
+    override fun description(): String = ctx?.getString(R.string.step_module_description) ?: "Steps and distance"
     override fun defaultEnabled(): Boolean = false
     override fun alive(): Boolean = running
     override fun priority(): Int = 90
+    override fun hasSettings(): Boolean = true
 
     override fun tickIntervalMs(): Int = ctx?.let { Prefs.getInt(it, "stp_interval", 30000) } ?: 30000
 
@@ -75,25 +76,25 @@ class StepModule : Module, SensorEventListener {
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
-    override fun compact(): String = "👣${Fmt.number(dailySteps)}"
+    override fun compact(): String = ctx?.getString(R.string.step_module_compact_text, Fmt.number(dailySteps)) ?: ""
 
     override fun detail(): String {
         val sb = StringBuilder()
-        val c = ctx
+        val c = ctx ?: return ""
         val goal = if (c != null) Prefs.getInt(c, "stp_goal", 10000) else 10000
         val pct = dailySteps * 100f / goal
         
-        sb.append("👣 Steps: ${Fmt.number(dailySteps)} / ${Fmt.number(goal.toLong())} (${String.format(Locale.US, "%.0f%%", pct)})\n")
+        sb.append(c.getString(R.string.step_module_steps, Fmt.number(dailySteps), Fmt.number(goal.toLong()), pct))
         
         if (c != null && Prefs.getBool(c, "stp_show_distance", true)) {
             val stride = Prefs.getInt(c, "stp_stride_cm", 75)
             val distKm = dailySteps * stride / 100000f
-            sb.append("   Distance: ${String.format(Locale.US, "%.2f km", distKm)}\n")
+            sb.append(String.format(Locale.US, c.getString(R.string.step_module_distance), distKm))
         }
 
         if (c != null && Prefs.getBool(c, "stp_show_yesterday", true)) {
             val y = Prefs.getLong(c, "stp_yesterday", 0)
-            if (y > 0) sb.append("   Yesterday: ${Fmt.number(y)}")
+            if (y > 0) sb.append(c.getString(R.string.step_module_yesterday, Fmt.number(y)))
         }
         return sb.toString().trim()
     }
@@ -111,7 +112,7 @@ class StepModule : Module, SensorEventListener {
         
         Column {
             SettingSlider(
-                label = "Update Interval",
+                label = ctx.getString(R.string.step_module_update_interval),
                 value = interval,
                 onValueChange = {
                     interval = it
@@ -125,29 +126,29 @@ class StepModule : Module, SensorEventListener {
 
             var goal by remember { mutableStateOf(Prefs.getInt(ctx, "stp_goal", 10000).toFloat()) }
             SettingSlider(
-                label = "Daily Goal",
+                label = ctx.getString(R.string.step_module_daily_goal),
                 value = goal,
                 valueRange = 0f..30000f,
                 onValueChange = {
                     goal = it
                     Prefs.setInt(ctx, "stp_goal", it.toInt())
                 },
-                formatter = { if (it == 0f) "No Goal" else "${it.toInt()} steps" }
+                formatter = { if (it == 0f) ctx.getString(R.string.step_module_no_goal) else "${it.toInt()}${ctx.getString(R.string.step_module_steps_unit)}" }
             )
             var stride by remember { mutableStateOf(Prefs.getInt(ctx, "stp_stride_cm", 75).toFloat()) }
             SettingSlider(
-                label = "Step Length",
+                label = ctx.getString(R.string.step_module_step_length),
                 value = stride,
                 valueRange = 30f..120f,
                 onValueChange = {
                     stride = it
                     Prefs.setInt(ctx, "stp_stride_cm", it.toInt())
                 },
-                formatter = { "${it.toInt()} cm" }
+                formatter = { "${it.toInt()}${ctx.getString(R.string.step_module_cm_unit)}" }
             )
             var showDistance by remember { mutableStateOf(Prefs.getBool(ctx, "stp_show_distance", true)) }
             SettingSwitch(
-                label = "Show Distance",
+                label = ctx.getString(R.string.step_module_show_distance),
                 checked = showDistance,
                 onCheckedChange = {
                     showDistance = it
@@ -156,7 +157,7 @@ class StepModule : Module, SensorEventListener {
             )
             var showGoal by remember { mutableStateOf(Prefs.getBool(ctx, "stp_show_goal", true)) }
             SettingSwitch(
-                label = "Show Goal",
+                label = ctx.getString(R.string.step_module_show_goal),
                 checked = showGoal,
                 onCheckedChange = {
                     showGoal = it
@@ -165,7 +166,7 @@ class StepModule : Module, SensorEventListener {
             )
             var showYesterday by remember { mutableStateOf(Prefs.getBool(ctx, "stp_show_yesterday", true)) }
             SettingSwitch(
-                label = "Show Yesterday",
+                label = ctx.getString(R.string.step_module_show_yesterday),
                 checked = showYesterday,
                 onCheckedChange = {
                     showYesterday = it
