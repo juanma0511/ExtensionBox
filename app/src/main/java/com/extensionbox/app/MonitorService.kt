@@ -112,20 +112,6 @@ class MonitorService : Service() {
                 SpeedTestModule(),
                 HabitTrackerModule()
             )
-                AppUsageModule(),
-                CpuModule(),
-                RamModule(),
-                SleepModule(),
-                NetworkModule(),
-                DataUsageModule(),
-                UnlockModule(),
-                StorageModule(),
-                ConnectionModule(),
-                UptimeModule(),
-                StepModule(),
-                SpeedTestModule(),
-                HabitTrackerModule()
-            )
             
             initialized = true
             startPreferenceObservation()
