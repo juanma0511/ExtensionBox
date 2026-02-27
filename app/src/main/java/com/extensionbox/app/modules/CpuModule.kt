@@ -26,6 +26,7 @@ class CpuModule : Module {
     
     private var coreFreqs = listOf<Long>()
     private var coreGovs = listOf<String>()
+    private var clusterInfo = listOf<Triple<String, String, Long>>()
     private var gpuLoad = -1
     private var gpuFreq = 0L
 
@@ -77,6 +78,7 @@ class CpuModule : Module {
             s.readCpuTemp().let { cpuTemp = it }
             coreFreqs = s.getCpuCoreFrequencies()
             coreGovs = s.getCpuGovernors()
+            clusterInfo = s.getCpuClusterInfo()
             val gpu = s.getGpuData()
             gpuLoad = gpu.first
             gpuFreq = gpu.second
@@ -143,6 +145,12 @@ class CpuModule : Module {
             sb.append("\n")
         }
 
+        if (clusterInfo.isNotEmpty()) {
+            clusterInfo.forEach { (label, gov, max) ->
+                sb.append("   $label: $gov (${max / 1000}MHz)\n")
+            }
+        }
+
         if (coreFreqs.isNotEmpty()) {
             sb.append(c.getString(R.string.cpu_module_cores))
             coreFreqs.forEachIndexed { i, f ->
@@ -162,6 +170,11 @@ class CpuModule : Module {
         if (gpuLoad >= 0) {
             d["gpu.load"] = "$gpuLoad%"
             if (gpuFreq > 0) d["gpu.frequency"] = "${gpuFreq / 1_000_000}MHz"
+        }
+
+        clusterInfo.forEach { (label, gov, _) ->
+            val key = label.lowercase(Locale.US).replace(" ", "_")
+            d["cpu.$key"] = gov
         }
 
         coreFreqs.forEachIndexed { i, f ->

@@ -460,9 +460,21 @@ class SystemAccess(ctx: Context) {
         try {
             output.lines().forEach { line ->
                 val l = line.lowercase(java.util.Locale.US)
+                // New logic: detect total and idle to get reliable system-wide usage
+                if (l.contains("%cpu") && l.contains("%idle")) {
+                    val mTotal = Regex("""(\d+)%cpu""").find(l)
+                    val mIdle = Regex("""(\d+)%idle""").find(l)
+                    if (mTotal != null && mIdle != null) {
+                        val total = mTotal.groupValues[1].toFloat()
+                        val idle = mIdle.groupValues[1].toFloat()
+                        if (total > 0) {
+                            return ((total - idle) * 100f / total).coerceIn(0f, 100f)
+                        }
+                    }
+                }
+                
+                // Fallback to summing components
                 if (l.contains("user") && l.contains("sys")) {
-                    // Try parsing "400%cpu 14%user 0%nice 20%sys..."
-                    // or "User 12%, System 10%..."
                     return parseCpuFromTopLine(l)
                 }
             }
@@ -481,12 +493,59 @@ class SystemAccess(ctx: Context) {
                         if (m != null) total += m.groupValues[1].toFloat()
                     }
                 }
-                if (total > 0) return total
+                if (total > 0) {
+                    val count = getCpuCoreCount()
+                    // If total exceeds 100%, it's almost certainly per-core reporting (e.g. 800% for 8 cores)
+                    return if (total > 100f) (total / count).coerceIn(0f, 100f) else total
+                }
             }
             -1f
         } catch (ignored: Exception) {
             -1f
         }
+    }
+
+    fun getCpuClusterInfo(): List<Triple<String, String, Long>> {
+        val clusters = mutableListOf<Triple<String, String, Long>>()
+        val policyDirs = mutableListOf<String>()
+        
+        // Scan for policy directories (usually policy0, policy4, policy7, etc)
+        val out = if (rootAvailable) shell.exec("ls -d /sys/devices/system/cpu/cpufreq/policy*") else null
+        if (out != null && !out.contains("No such")) {
+            policyDirs.addAll(out.split(Regex("\\s+")).filter { it.isNotEmpty() })
+        } else {
+            // Fallback for non-root/shizuku (limited)
+            for (i in 0..7) {
+                val p = "/sys/devices/system/cpu/cpufreq/policy$i"
+                if (java.io.File(p).exists()) policyDirs.add(p)
+            }
+        }
+
+        val policyData = mutableListOf<Triple<String, String, Long>>()
+        for (dir in policyDirs) {
+            val gov = readSysFile("$dir/scaling_governor") ?: "unknown"
+            val maxFreq = readSysFile("$dir/cpuinfo_max_freq")?.toLongOrNull() ?: 0L
+            policyData.add(Triple(dir, gov, maxFreq))
+        }
+
+        // Sort by max frequency to identify Little, Big, Prime
+        policyData.sortBy { it.third }
+
+        policyData.forEachIndexed { index, triple ->
+            val label = when (policyData.size) {
+                1 -> "Cluster"
+                2 -> if (index == 0) "Little Cluster" else "Big Cluster"
+                3 -> when (index) {
+                    0 -> "Little Cluster"
+                    1 -> "Big Cluster"
+                    else -> "Prime Cluster"
+                }
+                else -> "Cluster $index"
+            }
+            clusters.add(Triple(label, triple.second, triple.third))
+        }
+
+        return clusters
     }
 
     fun getRunningProcesses(): List<Triple<String, String, String>> {
