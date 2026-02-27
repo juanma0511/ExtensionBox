@@ -392,13 +392,17 @@ class MonitorService : Service() {
         val stopPi = PendingIntent.getService(this, 1, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val isDismissible = Prefs.getBool(this, "notif_dismissible", false)
-        val expandedContent = buildExpanded()
+        val alive = getAliveModulesSorted()
+        val expandedContent = buildExpanded(alive)
         val bigText = NotificationCompat.BigTextStyle().bigText(expandedContent)
+
+        // Collapse summary: show up to 3 non-battery modules to avoid duplication with title
+        val summary = alive.filter { it !is BatteryModule }.take(3).joinToString(" • ") { m -> m.compact() }
 
         return NotificationCompat.Builder(this, MONITOR_CH)
             .setSmallIcon(R.drawable.ic_notif)
             .setContentTitle(buildTitle())
-            .setContentText("Monitoring system performance")
+            .setContentText(summary.ifEmpty { "Monitoring system performance" })
             .setStyle(bigText)
             .setOngoing(!isDismissible)
             .setDeleteIntent(if (isDismissible) stopPi else null)
@@ -415,17 +419,17 @@ class MonitorService : Service() {
     private fun buildTitle(): String {
         if (!::modules.isInitialized) return "Extension Box"
         val contextAware = Prefs.getBool(this, "notif_context_aware", true)
-        val batMod = modules.filterIsInstance<BatteryModule>().firstOrNull() ?: return "Extension Box"
-        if (!batMod.alive()) return "Extension Box"
-
-        val lvl = batMod.getLevel()
-        return if (contextAware && lvl <= 15) "Extension Box • $lvl% Low" else "Extension Box • $lvl%"
+        val batMod = modules.filterIsInstance<BatteryModule>().firstOrNull()
+        if (batMod != null && batMod.alive()) {
+            val lvl = batMod.getLevel()
+            return if (contextAware && lvl <= 15) "Extension Box • $lvl% Low" else "Extension Box • $lvl%"
+        }
+        return "Extension Box • Active"
     }
 
-    private fun buildExpanded(): String {
+    private fun buildExpanded(alive: List<Module>): String {
         if (!::modules.isInitialized) return "Starting..."
         val layoutStyle = Prefs.getString(this, "notif_layout_style", "LIST") ?: "LIST"
-        val alive = getAliveModulesSorted()
         
         if (alive.isEmpty()) return "Enable extensions to see stats"
 
@@ -436,7 +440,7 @@ class MonitorService : Service() {
                     val m1 = alive[i]
                     val m2 = if (i + 1 < alive.size) alive[i + 1] else null
                     if (m2 != null) {
-                        lines.add("${m1.name().take(10)}: ${m1.compact()} • ${m2.name().take(10)}: ${m2.compact()}")
+                        lines.add("${m1.name()}: ${m1.compact()} • ${m2.name()}: ${m2.compact()}")
                     } else {
                         lines.add("${m1.name()}: ${m1.compact()}")
                     }

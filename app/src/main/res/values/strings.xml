@@ -25,7 +25,7 @@
     <string name="contributor">Contributor</string>
     <string name="data_usage_module_name">Data Usage</string>
     <string name="data_usage_module_description">Daily &amp; monthly, WiFi &amp; mobile</string>
-    <string name="data_usage_module_compact_text">Today: %1$s</string>
+    <string name="data_usage_module_compact_text">%1$s</string>
     <string name="data_usage_module_today_with_breakdown">Today: %1$s (W: %2$s • M: %3$s)\n</string>
     <string name="data_usage_module_today_simple">Today: %1$s\n</string>
     <string name="data_usage_module_month">\u0020\u0020\u0020Month: %1$s</string>
@@ -41,7 +41,7 @@
     <string name="data_usage_module_plan_warning_content">Used %1$.0f%% of %2$s plan</string>
     <string name="cpu_module_name">CPU</string>
     <string name="cpu_module_description">CPU usage, frequency and temperature</string>
-    <string name="cpu_module_compact_text">CPU: %1$s%2$s</string>
+    <string name="cpu_module_compact_text">%1$s%2$s</string>
     <string name="cpu_module_usage">CPU Usage: %1$s</string>
     <string name="cpu_module_temperature"> • %1$s</string>
     <string name="cpu_module_gpu_load">\u0020\u0020\u0020GPU: %1$d%%</string>
@@ -51,7 +51,7 @@
     <string name="cpu_module_update_interval">Update Interval</string>
     <string name="ram_module_name">RAM</string>
     <string name="ram_module_description">Memory status and running processes</string>
-    <string name="ram_module_compact_text">RAM: %1$d%% (%2$s)</string>
+    <string name="ram_module_compact_text">%1$d%% (%2$s)</string>
     <string name="ram_module_usage">RAM Usage: %1$d%% (%2$s / %3$s)\n</string>
     <string name="ram_module_available">\u0020\u0020\u0020Available: %1$s\n</string>
     <string name="ram_module_top_processes">\nTop Processes (CPU / RAM):\n</string>
@@ -69,7 +69,7 @@
     <string name="ram_module_threshold_formatter">%1$d%%</string>
     <string name="step_module_name">Step Counter</string>
     <string name="step_module_description">Steps and distance</string>
-    <string name="step_module_compact_text">%1$s steps</string>
+    <string name="step_module_compact_text">%1$s</string>
     <string name="step_module_steps">Steps: %1$s / %2$s (%3$.0f%%)\n</string>
     <string name="step_module_distance">\u0020\u0020\u0020Distance: %.2f km\n</string>
     <string name="step_module_yesterday">\u0020\u0020\u0020Yesterday: %1$s</string>
@@ -84,7 +84,7 @@
     <string name="step_module_show_yesterday">Show Yesterday</string>
     <string name="sleep_module_name">Deep Sleep</string>
     <string name="sleep_module_description">CPU sleep vs awake ratio</string>
-    <string name="sleep_module_compact_text">Sleep: %1$d%%</string>
+    <string name="sleep_module_compact_text">%1$d%%</string>
     <string name="sleep_module_deep_sleep">Deep Sleep: %1$s (%2$.1f%%)\n</string>
     <string name="sleep_module_awake">\u0020\u0020\u0020Awake: %1$s (%2$.1f%%)</string>
     <string name="sleep_module_update_interval">Update Interval</string>
@@ -92,7 +92,7 @@
     <string name="sleep_module_interval_formatter_seconds">%1$ds</string>
     <string name="unlock_module_name">Unlock Counter</string>
     <string name="unlock_module_description">Daily unlocks, detox tracking</string>
-    <string name="unlock_module_compact_text">%1$d unlocks</string>
+    <string name="unlock_module_compact_text">%1$d</string>
     <string name="unlock_module_today">Today: %1$d unlocks</string>
     <string name="unlock_module_less_than_yesterday">%1$d%% less than yesterday!</string>
     <string name="unlock_module_more_than_yesterday">%1$d%% more than yesterday</string>
@@ -214,8 +214,8 @@
     <string name="connection_module_vpn_status_none">None</string>
     <string name="hab_counter_module_name">Habit Tracker</string>
     <string name="hab_counter_module_description">Self-monitoring counter &amp; streak tracker</string>
-    <string name="hab_counter_module_compact_streak">Count: %1$d • Streak: %2$dd</string>
-    <string name="hab_counter_module_compact_today">Count: %1$d</string>
+    <string name="hab_counter_module_compact_streak">%1$d • Streak: %2$dd</string>
+    <string name="hab_counter_module_compact_today">%1$d</string>
     <string name="hab_counter_module_no_data">No data</string>
     <string name="hab_counter_module_today">Today: %1$d</string>
     <string name="hab_counter_module_streak"> • Streak: %1$dd clean</string>
@@ -254,7 +254,7 @@
     <string name="speed_test_module_show_ping">Show Ping</string>
     <string name="storage_module_name">Storage</string>
     <string name="storage_module_description">Internal storage usage</string>
-    <string name="storage_module_compact_text">Storage: %1$s/%2$s</string>
+    <string name="storage_module_compact_text">%1$s / %2$s</string>
     <string name="storage_module_internal">Internal: %1$s / %2$s (%3$.1f%%)\n</string>
     <string name="storage_module_free">\u0020\u0020\u0020Free: %1$s\n</string>
     <string name="storage_module_io">\u0020\u0020\u0020I/O: R %1$s • W %2$s</string>
